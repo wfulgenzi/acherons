@@ -1,0 +1,289 @@
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { eq, and } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { db } from "@/db";
+import {
+  requests,
+  requestClinicAccess,
+  organisations,
+  clinicProfiles,
+  proposals,
+  memberships,
+  user,
+} from "@/db/schema";
+import { ProposalsList, type ProposalItem } from "./ProposalsList";
+import { RequestClinicsMap } from "./RequestClinicsMap";
+import type { OpeningHours } from "@/db/schema";
+
+type ClinicOnRequest = {
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  openingHours: OpeningHours | null;
+};
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export default async function RequestDetailPage({ params }: RouteContext) {
+  const { id } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/login");
+
+  const memberRows = await db
+    .select({ orgId: memberships.orgId, orgType: organisations.type })
+    .from(memberships)
+    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
+    .where(eq(memberships.userId, session.user.id))
+    .limit(1);
+
+  const membership = memberRows[0];
+  if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
+
+  // Fetch the request
+  const [req] = await db
+    .select()
+    .from(requests)
+    .where(and(eq(requests.id, id), eq(requests.dispatcherOrgId, membership.orgId)))
+    .limit(1);
+
+  if (!req) notFound();
+
+  // Fetch creator name
+  const [creator] = await db
+    .select({ name: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, req.createdByUserId))
+    .limit(1);
+
+  // Fetch clinics on this request
+  const clinicRows = await db
+    .select({
+      id: organisations.id,
+      name: organisations.name,
+      address: clinicProfiles.address,
+      latitude: clinicProfiles.latitude,
+      longitude: clinicProfiles.longitude,
+      openingHours: clinicProfiles.openingHours,
+    })
+    .from(requestClinicAccess)
+    .innerJoin(organisations, eq(organisations.id, requestClinicAccess.clinicOrgId))
+    .leftJoin(clinicProfiles, eq(clinicProfiles.orgId, organisations.id))
+    .where(eq(requestClinicAccess.requestId, id));
+
+  const clinics: ClinicOnRequest[] = clinicRows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    address: r.address ?? null,
+    latitude: r.latitude ?? null,
+    longitude: r.longitude ?? null,
+    openingHours: r.openingHours ?? null,
+  }));
+
+  // Fetch proposals
+  const proposalRows = await db
+    .select({
+      proposal: proposals,
+      clinicName: organisations.name,
+    })
+    .from(proposals)
+    .innerJoin(organisations, eq(organisations.id, proposals.clinicOrgId))
+    .where(eq(proposals.requestId, id))
+    .orderBy(proposals.createdAt);
+
+  const proposalItems: ProposalItem[] = proposalRows.map((r) => ({
+    id: r.proposal.id,
+    clinicName: r.clinicName,
+    status: r.proposal.status,
+    notes: r.proposal.notes,
+    proposedTimeslots: r.proposal.proposedTimeslots,
+    createdAt: r.proposal.createdAt.toISOString(),
+  }));
+
+  const pendingCount = proposalItems.filter((p) => p.status === "pending").length;
+  const shortId = req.id.slice(0, 8).toUpperCase();
+  const creatorLabel = creator?.name || creator?.email || "Unknown";
+  const createdLabel = req.createdAt.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }) + ", " + req.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+  const genderLabel =
+    req.patientGender === "male" ? "Male"
+    : req.patientGender === "female" ? "Female"
+    : req.patientGender === "other" ? "Other"
+    : "Unknown";
+
+  return (
+    <div className="flex-1 min-h-screen">
+      {/* Header — same background as page, distinguished only by bottom border */}
+      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">REQ-{shortId}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            {genderLabel}
+            {req.patientAge != null ? ` · ${req.patientAge} years` : ""}
+            {" · postcode "}{req.postcode}
+          </p>
+        </div>
+        <button
+          disabled
+          className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-brand-200 bg-brand-100 text-gray-400 cursor-not-allowed"
+        >
+          <BellIcon />
+        </button>
+      </header>
+
+      <div className="px-8 py-8 space-y-6">
+        {/* Back link */}
+        <Link
+          href="/requests"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-800 transition-colors"
+        >
+          <ChevronLeftIcon />
+          All requests
+        </Link>
+
+        {/* Info card */}
+        <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <StatusBadge status={req.status} />
+              <p className="text-xs text-gray-400">
+                Created {createdLabel} · by {creatorLabel}
+              </p>
+            </div>
+            {req.status === "open" && (
+              <Link
+                href={`/requests/${id}/edit`}
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-brand-800 border border-brand-200 hover:border-brand-300 rounded-xl px-3 py-2 transition-colors shrink-0"
+              >
+                <EditIcon />
+                Edit clinics &amp; description
+              </Link>
+            )}
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed">{req.caseDescription}</p>
+        </div>
+
+        {/* Clinics card + map side by side — items-stretch so map matches card height */}
+        <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-5 items-stretch">
+          {/* Clinics card */}
+          <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-bold text-gray-900">Clinics on this request</h2>
+              <span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2.5 py-1 rounded-full border border-brand-200">
+                {clinics.length} selected
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {clinics.map((clinic) => (
+                <ClinicCard key={clinic.id} clinic={clinic} />
+              ))}
+              {clinics.length === 0 && (
+                <p className="col-span-2 text-sm text-gray-400">No clinics assigned.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Map — full height of the grid row, no fixed px */}
+          <div className="rounded-2xl overflow-hidden border border-brand-200 shadow-sm min-h-[220px]">
+            <RequestClinicsMap clinics={clinics} />
+          </div>
+        </div>
+
+        {/* Proposals card */}
+        <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <h2 className="text-sm font-bold text-gray-900">Proposals</h2>
+            {proposalItems.length > 0 && (
+              <span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2.5 py-1 rounded-full border border-brand-200">
+                {proposalItems.length} total · {pendingCount} pending
+              </span>
+            )}
+          </div>
+          <ProposalsList items={proposalItems} requestId={id} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function ClinicCard({ clinic }: { clinic: ClinicOnRequest }) {
+  const todaySlots = getTodaySlots(clinic.openingHours);
+  return (
+    <div className="border border-brand-200 rounded-xl p-4 bg-brand-100">
+      <div className="flex items-start gap-2">
+        <ClinicBuildingIcon />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-900 leading-tight">{clinic.name}</p>
+          {clinic.address && (
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{clinic.address}</p>
+          )}
+          {todaySlots.length > 0 && (
+            <p className="text-xs text-brand-600 font-medium mt-1.5">
+              Today: {todaySlots.map(([s, e]) => `${s} – ${e}`).join(" · ")}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg: Record<string, string> = {
+    open: "bg-orange-50 text-orange-600 border-orange-200",
+    confirmed: "bg-brand-100 text-brand-800 border-brand-200",
+    cancelled: "bg-red-50 text-red-600 border-red-200",
+  };
+  return (
+    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg[status] ?? cfg.open}`}>
+      {status}
+    </span>
+  );
+}
+
+function getTodaySlots(hours: OpeningHours | null): [string, string][] {
+  if (!hours) return [];
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  return hours.find((d) => d.day === todayIdx)?.slots ?? [];
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+function EditIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+function ClinicBuildingIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500 shrink-0 mt-0.5">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
