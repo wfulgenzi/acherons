@@ -1,8 +1,6 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { membershipsRepo } from "@/db/repositories";
-import { withUserContext } from "@/db/rls";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
 import { OrgProvider } from "@/lib/org-context";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -11,32 +9,28 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
 
   if (session.user.isAdmin) redirect("/admin");
 
-  const row = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserIdWithOrg(tx, session.user.id)
-  );
-  if (!row) redirect("/onboarding");
-
-  const { memberships: membership, organisations: org } = row;
+  const membership = await getMembership(session.user.id);
+  if (!membership) redirect("/onboarding");
 
   return (
     <div className="flex min-h-screen bg-brand-100">
       <Sidebar
-        orgType={org.type}
-        orgName={org.name}
+        orgType={membership.orgType}
+        orgName={membership.orgName}
         isAdmin={session.user.isAdmin ?? false}
         userEmail={session.user.email}
         userName={session.user.name ?? null}
       />
       <OrgProvider
         value={{
-          orgId: org.id,
-          orgName: org.name,
-          orgType: org.type,
+          orgId: membership.orgId,
+          orgName: membership.orgName,
+          orgType: membership.orgType,
           membershipRole: membership.role,
         }}
       >

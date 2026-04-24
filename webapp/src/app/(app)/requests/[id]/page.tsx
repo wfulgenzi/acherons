@@ -1,10 +1,10 @@
-import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { withRLS, withUserContext } from "@/db/rls";
-import { membershipsRepo, requestsRepo, rcaRepo, proposalsRepo } from "@/db/repositories";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
+import { withRLS } from "@/db/rls";
+import { requestsRepo, rcaRepo, proposalsRepo } from "@/db/repositories";
 import { ProposalsList, type ProposalItem } from "./ProposalsList";
 import { RequestClinicsMap } from "./RequestClinicsMap";
 import type { OpeningHours } from "@/db/schema";
@@ -22,12 +22,10 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export default async function RequestDetailPage({ params }: RouteContext) {
   const { id } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
 
-  const membership = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserId(tx, session.user.id)
-  );
+  const membership = await getMembership(session.user.id);
   if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
 
   const [req, clinicRows, proposalRows] = await withRLS(

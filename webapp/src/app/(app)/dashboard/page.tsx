@@ -1,27 +1,21 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { membershipsRepo } from "@/db/repositories";
-import { withUserContext } from "@/db/rls";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
 import { ClinicDashboard } from "./_clinic/ClinicDashboard";
 import { DispatcherDashboard } from "./_dispatcher/DispatcherDashboard";
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
 
-  const row = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserIdWithOrg(tx, session.user.id)
-  );
-  if (!row) redirect("/onboarding");
+  const membership = await getMembership(session.user.id);
+  if (!membership) redirect("/onboarding");
 
-  const { organisations: org } = row;
-
-  if (org.type === "clinic") {
+  if (membership.orgType === "clinic") {
     return (
       <ClinicDashboard
-        orgId={org.id}
-        orgName={org.name}
+        orgId={membership.orgId}
+        orgName={membership.orgName}
         userId={session.user.id}
         userName={session.user.name ?? null}
       />
@@ -30,8 +24,8 @@ export default async function DashboardPage() {
 
   return (
     <DispatcherDashboard
-      orgId={org.id}
-      orgName={org.name}
+      orgId={membership.orgId}
+      orgName={membership.orgName}
       userId={session.user.id}
       userName={session.user.name ?? null}
     />

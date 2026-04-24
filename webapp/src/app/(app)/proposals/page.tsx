@@ -1,8 +1,8 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { withRLS, withUserContext } from "@/db/rls";
-import { membershipsRepo, proposalsRepo } from "@/db/repositories";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
+import { withRLS } from "@/db/rls";
+import { proposalsRepo } from "@/db/repositories";
 import {
   ClinicProposalsView,
   type ProposalRow,
@@ -14,12 +14,10 @@ import {
 import type { ProposedTimeslots } from "@/db/schema";
 
 export default async function ProposalsPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
 
-  const membership = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserId(tx, session.user.id)
-  );
+  const membership = await getMembership(session.user.id);
   if (!membership) redirect("/onboarding");
 
   if (membership.orgType === "clinic") {

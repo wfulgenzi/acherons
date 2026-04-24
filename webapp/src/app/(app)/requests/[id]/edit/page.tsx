@@ -1,20 +1,18 @@
-import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { withRLS, withUserContext } from "@/db/rls";
-import { membershipsRepo, requestsRepo, rcaRepo, orgsRepo } from "@/db/repositories";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
+import { withRLS } from "@/db/rls";
+import { requestsRepo, rcaRepo, orgsRepo } from "@/db/repositories";
 import { EditRequestFlow, type EditClinicItem } from "./EditRequestFlow";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export default async function EditRequestPage({ params }: RouteContext) {
   const { id } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
 
-  const membership = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserId(tx, session.user.id)
-  );
+  const membership = await getMembership(session.user.id);
   if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
 
   const [req, allClinicRows, selectedClinicIds] = await withRLS(

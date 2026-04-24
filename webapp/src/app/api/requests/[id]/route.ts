@@ -1,9 +1,9 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { auth } from "@/lib/auth";
-import { withRLS, withUserContext } from "@/db/rls";
-import { membershipsRepo, requestsRepo, rcaRepo } from "@/db/repositories";
+import { getSession } from "@/lib/session";
+import { getMembership } from "@/lib/membership";
+import { withRLS } from "@/db/rls";
+import { requestsRepo, rcaRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,14 +15,12 @@ const UpdateRequestSchema = v.partial(
 );
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const membership = await withUserContext(session.user.id, (tx) =>
-    membershipsRepo.findByUserId(tx, session.user.id)
-  );
+  const membership = await getMembership(session.user.id);
   if (!membership || membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
