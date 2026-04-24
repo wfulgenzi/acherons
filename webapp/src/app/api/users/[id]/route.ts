@@ -13,7 +13,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const { id } = await params;
 
@@ -21,11 +23,15 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   if (auth.session?.user.id === id) {
     return NextResponse.json(
       { error: "You cannot delete your own account." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const rows = await adminDb.select().from(user).where(eq(user.id, id)).limit(1);
+  const rows = await adminDb
+    .select()
+    .from(user)
+    .where(eq(user.id, id))
+    .limit(1);
   if (!rows[0]) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }

@@ -42,9 +42,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm px-8 py-10">
-        <h1 className="text-2xl font-bold text-brand-800 mb-1">
-          Welcome back
-        </h1>
+        <h1 className="text-2xl font-bold text-brand-800 mb-1">Welcome back</h1>
         <p className="text-sm text-brand-500 mb-8">
           Log in to your account to continue.
         </p>
@@ -150,7 +148,11 @@ export default function LoginPage() {
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Suspense fallback={<div className="w-full max-w-sm h-96 bg-brand-50 rounded-2xl border border-brand-200 animate-pulse" />}>
+        <Suspense
+          fallback={
+            <div className="w-full max-w-sm h-96 bg-brand-50 rounded-2xl border border-brand-200 animate-pulse" />
+          }
+        >
           <LoginForm />
         </Suspense>
       </main>

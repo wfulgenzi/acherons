@@ -9,19 +9,24 @@ const ADMIN_EMAILS = new Set(
   (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
-    .filter(Boolean)
+    .filter(Boolean),
 );
 
 // BETTER_AUTH_URL is used server-side to construct absolute callback URLs.
 // On Vercel, VERCEL_URL is injected automatically per-deployment (no https://).
 // Locally, fall back to BETTER_AUTH_URL from .env.local.
 function getBaseURL() {
-  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
   // VERCEL_PROJECT_PRODUCTION_URL is the stable domain (e.g. hackerons.vercel.app)
   // VERCEL_URL is the per-deployment URL — use it only as a fallback
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL)
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
   return "http://localhost:3000";
 }
 

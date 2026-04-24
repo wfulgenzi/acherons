@@ -9,7 +9,8 @@ import type { ClinicItem } from "./NewRequestFlow";
 // Fix Leaflet's default marker icon path issue with webpack/Next.js
 const markerIcon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -66,7 +67,9 @@ function MapController({
 
   // Fly to hovered clinic
   useEffect(() => {
-    if (!hoveredClinicId) return;
+    if (!hoveredClinicId) {
+      return;
+    }
     const clinic = clinics.find((c) => c.id === hoveredClinicId);
     if (clinic?.latitude && clinic?.longitude) {
       map.flyTo([clinic.latitude, clinic.longitude], 15, { duration: 0.6 });
@@ -92,15 +95,17 @@ export function ClinicMapInner({
   onMarkerClick,
 }: Props) {
   const mappableClinics = clinics.filter(
-    (c) => c.latitude != null && c.longitude != null
+    (c) => c.latitude != null && c.longitude != null,
   );
 
   // Default center: average of all clinics, or London fallback
   const defaultCenter: [number, number] =
     mappableClinics.length > 0
       ? [
-          mappableClinics.reduce((s, c) => s + c.latitude!, 0) / mappableClinics.length,
-          mappableClinics.reduce((s, c) => s + c.longitude!, 0) / mappableClinics.length,
+          mappableClinics.reduce((s, c) => s + c.latitude!, 0) /
+            mappableClinics.length,
+          mappableClinics.reduce((s, c) => s + c.longitude!, 0) /
+            mappableClinics.length,
         ]
       : [51.505, -0.09];
 
@@ -128,8 +133,8 @@ export function ClinicMapInner({
         const icon = isHovered
           ? markerIconHovered
           : isSelected
-          ? markerIconSelected
-          : markerIcon;
+            ? markerIconSelected
+            : markerIcon;
 
         return (
           <Marker
@@ -141,9 +146,13 @@ export function ClinicMapInner({
             }}
           >
             <Popup>
-              <div className="text-sm font-semibold">{idx + 1}. {clinic.name}</div>
+              <div className="text-sm font-semibold">
+                {idx + 1}. {clinic.name}
+              </div>
               {clinic.address && (
-                <div className="text-xs text-gray-500 mt-0.5">{clinic.address}</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {clinic.address}
+                </div>
               )}
             </Popup>
           </Marker>

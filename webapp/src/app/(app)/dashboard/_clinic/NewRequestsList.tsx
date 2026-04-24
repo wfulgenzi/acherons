@@ -4,7 +4,10 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatPatient, timeAgo } from "./utils";
-import { ProposalModal, type RequestForProposal } from "@/components/ProposalModal";
+import {
+  ProposalModal,
+  type RequestForProposal,
+} from "@/components/ProposalModal";
 
 export type RequestItem = {
   id: string;
@@ -100,7 +103,9 @@ export function NewRequestsList({ items }: { items: RequestItem[] }) {
 }
 
 function ProposalBadge({ status }: { status: RequestItem["proposalStatus"] }) {
-  if (!status) return null;
+  if (!status) {
+    return null;
+  }
   if (status === "pending") {
     return (
       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 whitespace-nowrap">

@@ -12,15 +12,19 @@ import type { ClinicBookingItem } from "./_clinic/types";
 
 export default async function BookingsPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership) redirect("/onboarding");
+  if (!membership) {
+    redirect("/onboarding");
+  }
 
   if (membership.orgType === "clinic") {
     const rows = await withRLS(
       { userId: session.user.id, orgId: membership.orgId },
-      (tx) => bookingsRepo.findByClinic(tx, membership.orgId)
+      (tx) => bookingsRepo.findByClinic(tx, membership.orgId),
     );
 
     const items: ClinicBookingItem[] = rows.map((r) => ({
@@ -33,12 +37,14 @@ export default async function BookingsPage() {
       caseDescription: r.caseDescription,
     }));
 
-    return <ClinicBookingsView items={items} today={new Date().toISOString()} />;
+    return (
+      <ClinicBookingsView items={items} today={new Date().toISOString()} />
+    );
   }
 
   const rows = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
-    (tx) => bookingsRepo.findByDispatcher(tx, membership.orgId)
+    (tx) => bookingsRepo.findByDispatcher(tx, membership.orgId),
   );
 
   const data: BookingRow[] = rows.map((r) => ({
@@ -52,5 +58,7 @@ export default async function BookingsPage() {
     clinicName: r.clinicName,
   }));
 
-  return <DispatcherBookingsView data={data} today={new Date().toISOString()} />;
+  return (
+    <DispatcherBookingsView data={data} today={new Date().toISOString()} />
+  );
 }

@@ -9,14 +9,18 @@ import { DispatchersTable, type DispatcherRow } from "./DispatchersTable";
 
 export default async function DispatchersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user.isAdmin) redirect("/dashboard");
+  if (!session?.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   const [rows, memberCounts] = await Promise.all([
     orgsRepo.findAllByType(adminDb, "dispatch"),
     membershipsRepo.memberCountsByOrg(adminDb),
   ]);
 
-  const countMap = Object.fromEntries(memberCounts.map((r) => [r.orgId, r.count]));
+  const countMap = Object.fromEntries(
+    memberCounts.map((r) => [r.orgId, r.count]),
+  );
 
   const data: DispatcherRow[] = rows.map((r) => ({
     id: r.organisations.id,

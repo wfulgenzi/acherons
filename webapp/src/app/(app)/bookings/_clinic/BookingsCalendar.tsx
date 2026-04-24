@@ -25,7 +25,7 @@ function isoToDayOfWeek(dateKey: string): number {
 
 function durationMins(start: string, end: string): number {
   return Math.round(
-    (new Date(end).getTime() - new Date(start).getTime()) / 60_000
+    (new Date(end).getTime() - new Date(start).getTime()) / 60_000,
   );
 }
 
@@ -48,7 +48,9 @@ export function BookingsCalendar({ items, today }: Props) {
   const byDay: Record<string, ClinicBookingItem[]> = {};
   for (const item of items) {
     const key = item.confirmedStart.slice(0, 10);
-    if (!byDay[key]) byDay[key] = [];
+    if (!byDay[key]) {
+      byDay[key] = [];
+    }
     byDay[key].push(item);
   }
 
@@ -76,9 +78,7 @@ export function BookingsCalendar({ items, today }: Props) {
                 key={key}
                 onClick={() => setSelectedKey(key)}
                 className={`flex flex-col items-center py-4 transition-colors ${
-                  isSelected
-                    ? "bg-brand-50"
-                    : "hover:bg-gray-50"
+                  isSelected ? "bg-brand-50" : "hover:bg-gray-50"
                 }`}
               >
                 <span className="text-xs font-semibold text-gray-400 tracking-wide mb-2">
@@ -89,8 +89,8 @@ export function BookingsCalendar({ items, today }: Props) {
                     isToday
                       ? "bg-brand-600 text-white"
                       : isSelected
-                      ? "bg-brand-100 text-brand-800"
-                      : "text-gray-700"
+                        ? "bg-brand-100 text-brand-800"
+                        : "text-gray-700"
                   }`}
                 >
                   {day.getDate()}
@@ -117,14 +117,15 @@ export function BookingsCalendar({ items, today }: Props) {
                 {dayBookings.map((b) => {
                   const time = new Date(b.confirmedStart).toLocaleTimeString(
                     "en-GB",
-                    { hour: "2-digit", minute: "2-digit" }
+                    { hour: "2-digit", minute: "2-digit" },
                   );
                   return (
                     <span
                       key={b.id}
                       className="w-full text-xs font-medium bg-brand-100 text-brand-800 rounded-md px-1.5 py-0.5 truncate"
                     >
-                      {time} {genderShort(b.patientGender)}·{b.patientAge ?? "?"}
+                      {time} {genderShort(b.patientGender)}·
+                      {b.patientAge ?? "?"}
                     </span>
                   );
                 })}
@@ -153,7 +154,7 @@ export function BookingsCalendar({ items, today }: Props) {
               .sort(
                 (a, b) =>
                   new Date(a.confirmedStart).getTime() -
-                  new Date(b.confirmedStart).getTime()
+                  new Date(b.confirmedStart).getTime(),
               )
               .map((b) => {
                 const start = new Date(b.confirmedStart);

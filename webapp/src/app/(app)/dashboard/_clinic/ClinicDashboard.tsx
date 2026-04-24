@@ -14,8 +14,12 @@ interface Props {
 }
 
 function getGreeting(hour: number): string {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
+  if (hour < 12) {
+    return "Good morning";
+  }
+  if (hour < 17) {
+    return "Good afternoon";
+  }
   return "Good evening";
 }
 
@@ -29,16 +33,26 @@ export async function ClinicDashboard({ orgId, userId, userName }: Props) {
   const weekEnd = new Date(weekStart.getTime() + 7 * 86_400_000);
   const fourteenDaysAgo = new Date(todayStart.getTime() - 14 * 86_400_000);
 
-  const [openRequests, todayBookings, weekBookings, completedCount, recentProposals] =
-    await withRLS({ userId, orgId }, async (tx) =>
-      Promise.all([
-        requestsRepo.findAccessibleByClinic(tx, orgId),
-        bookingsRepo.findByClinicInWindow(tx, orgId, todayStart, todayEnd),
-        bookingsRepo.findByClinicInWindow(tx, orgId, weekStart, weekEnd),
-        bookingsRepo.countByClinicInWindow(tx, orgId, fourteenDaysAgo, todayStart),
-        proposalsRepo.findRecentByClinic(tx, orgId, 5),
-      ])
-    );
+  const [
+    openRequests,
+    todayBookings,
+    weekBookings,
+    completedCount,
+    recentProposals,
+  ] = await withRLS({ userId, orgId }, async (tx) =>
+    Promise.all([
+      requestsRepo.findAccessibleByClinic(tx, orgId),
+      bookingsRepo.findByClinicInWindow(tx, orgId, todayStart, todayEnd),
+      bookingsRepo.findByClinicInWindow(tx, orgId, weekStart, weekEnd),
+      bookingsRepo.countByClinicInWindow(
+        tx,
+        orgId,
+        fourteenDaysAgo,
+        todayStart,
+      ),
+      proposalsRepo.findRecentByClinic(tx, orgId, 5),
+    ]),
+  );
 
   const firstName = userName?.split(" ")[0] ?? null;
   const greeting = getGreeting(now.getHours());
@@ -137,7 +151,17 @@ export async function ClinicDashboard({ orgId, userId, userName }: Props) {
 
 function SearchIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400 shrink-0"
+    >
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
@@ -146,7 +170,16 @@ function SearchIcon() {
 
 function BellIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>

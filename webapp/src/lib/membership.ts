@@ -16,15 +16,19 @@ export type MembershipContext = {
  *
  * Returns null if the user has no membership (triggers redirect to onboarding).
  */
-export const getMembership = cache(async (userId: string): Promise<MembershipContext | null> => {
-  const row = await withUserContext(userId, (tx) =>
-    membershipsRepo.findByUserIdWithOrg(tx, userId)
-  );
-  if (!row) return null;
-  return {
-    orgId: row.memberships.orgId,
-    orgType: row.organisations.type,
-    orgName: row.organisations.name,
-    role: row.memberships.role,
-  };
-});
+export const getMembership = cache(
+  async (userId: string): Promise<MembershipContext | null> => {
+    const row = await withUserContext(userId, (tx) =>
+      membershipsRepo.findByUserIdWithOrg(tx, userId),
+    );
+    if (!row) {
+      return null;
+    }
+    return {
+      orgId: row.memberships.orgId,
+      orgType: row.organisations.type,
+      orgName: row.organisations.name,
+      role: row.memberships.role,
+    };
+  },
+);

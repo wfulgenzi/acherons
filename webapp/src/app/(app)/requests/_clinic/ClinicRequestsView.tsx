@@ -2,7 +2,10 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ProposalModal, type RequestForProposal } from "@/components/ProposalModal";
+import {
+  ProposalModal,
+  type RequestForProposal,
+} from "@/components/ProposalModal";
 
 export type ClinicRequestItem = {
   id: string;
@@ -81,17 +84,19 @@ function RequestCard({
   onClick: () => void;
 }) {
   const genderShort =
-    item.patientGender === "male" ? "M"
-    : item.patientGender === "female" ? "F"
-    : "?";
+    item.patientGender === "male"
+      ? "M"
+      : item.patientGender === "female"
+        ? "F"
+        : "?";
 
   const ageLabel = item.patientAge != null ? `${item.patientAge}y` : "?";
   const timeAgo = formatTimeAgo(new Date(item.createdAt));
   const creatorLabel = item.creatorName
     ? firstNameInitial(item.creatorName)
     : item.creatorEmail
-    ? item.creatorEmail.split("@")[0]
-    : null;
+      ? item.creatorEmail.split("@")[0]
+      : null;
 
   return (
     <button
@@ -129,10 +134,16 @@ function RequestCard({
 function formatTimeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
@@ -142,8 +153,14 @@ function firstNameInitial(name: string) {
   return parts[0] + (parts[1] ? ` ${parts[1][0]}.` : "");
 }
 
-function ProposalBadge({ status }: { status: ClinicRequestItem["proposalStatus"] }) {
-  if (!status) return null;
+function ProposalBadge({
+  status,
+}: {
+  status: ClinicRequestItem["proposalStatus"];
+}) {
+  if (!status) {
+    return null;
+  }
   if (status === "pending") {
     return (
       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 whitespace-nowrap">
@@ -170,15 +187,35 @@ function ProposalBadge({ status }: { status: ClinicRequestItem["proposalStatus"]
 
 function ChevronRightIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="9 18 15 12 9 6" />
     </svg>
   );
 }
 function ClockIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }

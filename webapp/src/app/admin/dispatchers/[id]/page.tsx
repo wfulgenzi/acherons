@@ -4,7 +4,10 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { adminDb } from "@/db";
 import { orgsRepo, membershipsRepo } from "@/db/repositories";
-import { OrgMembersTable, type OrgMemberRow } from "@/components/OrgMembersTable";
+import {
+  OrgMembersTable,
+  type OrgMemberRow,
+} from "@/components/OrgMembersTable";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -12,14 +15,18 @@ export default async function DispatcherDetailPage({ params }: Props) {
   const { id } = await params;
 
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user.isAdmin) redirect("/dashboard");
+  if (!session?.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   const [row, memberRows] = await Promise.all([
     orgsRepo.findById(adminDb, id),
     membershipsRepo.findByOrgId(adminDb, id),
   ]);
 
-  if (!row || row.organisations.type !== "dispatch") notFound();
+  if (!row || row.organisations.type !== "dispatch") {
+    notFound();
+  }
 
   const org = row.organisations;
 
@@ -75,7 +82,13 @@ export default async function DispatcherDetailPage({ params }: Props) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
   return (
     <div className="flex px-5 py-3.5 gap-4">
       <dt className="text-sm text-gray-500 w-36 shrink-0">{label}</dt>

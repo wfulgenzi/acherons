@@ -35,7 +35,7 @@ export type ClinicProfileUpdates = {
 /** Format a raw org + profile row into the standard response shape. */
 export function formatOrg(
   org: typeof organisations.$inferSelect,
-  profile: typeof clinicProfiles.$inferSelect | null
+  profile: typeof clinicProfiles.$inferSelect | null,
 ): OrgWithProfile {
   return {
     id: org.id,
@@ -109,7 +109,11 @@ export async function findAllClinics(tx: RLSDb) {
 /** Admin: list all orgs without profiles (lightweight). */
 export async function findAllSummary(tx: Tx) {
   return tx
-    .select({ id: organisations.id, name: organisations.name, type: organisations.type })
+    .select({
+      id: organisations.id,
+      name: organisations.name,
+      type: organisations.type,
+    })
     .from(organisations)
     .orderBy(organisations.name);
 }
@@ -117,16 +121,19 @@ export async function findAllSummary(tx: Tx) {
 export async function create(
   tx: Tx,
   name: string,
-  type: "dispatch" | "clinic"
+  type: "dispatch" | "clinic",
 ) {
-  const [org] = await tx.insert(organisations).values({ name, type }).returning();
+  const [org] = await tx
+    .insert(organisations)
+    .values({ name, type })
+    .returning();
   return org;
 }
 
 export async function update(
   tx: Tx,
   id: string,
-  data: { name?: string; type?: "dispatch" | "clinic" }
+  data: { name?: string; type?: "dispatch" | "clinic" },
 ) {
   const [org] = await tx
     .update(organisations)
@@ -145,7 +152,7 @@ export async function upsertClinicProfile(
   tx: Tx,
   orgId: string,
   existing: boolean,
-  data: ClinicProfileUpdates
+  data: ClinicProfileUpdates,
 ) {
   const values = { ...data, updatedAt: new Date() };
   if (existing) {

@@ -15,15 +15,19 @@ import type { ProposedTimeslots } from "@/db/schema";
 
 export default async function ProposalsPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership) redirect("/onboarding");
+  if (!membership) {
+    redirect("/onboarding");
+  }
 
   if (membership.orgType === "clinic") {
     const rows = await withRLS(
       { userId: session.user.id, orgId: membership.orgId },
-      (tx) => proposalsRepo.findByClinic(tx, membership.orgId)
+      (tx) => proposalsRepo.findByClinic(tx, membership.orgId),
     );
 
     const data: ProposalRow[] = rows.map((r) => {
@@ -47,7 +51,7 @@ export default async function ProposalsPage() {
 
   const rows = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
-    (tx) => proposalsRepo.findByDispatcher(tx, membership.orgId)
+    (tx) => proposalsRepo.findByDispatcher(tx, membership.orgId),
   );
 
   const data: DispatcherProposalRow[] = rows.map((r) => {

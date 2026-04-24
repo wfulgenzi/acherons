@@ -30,7 +30,9 @@ type Draft = {
 function loadDraft(): Draft | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
+    if (!raw) {
+      return null;
+    }
     const draft: Draft = JSON.parse(raw);
     const age = Date.now() - new Date(draft.savedAt).getTime();
     if (age > DRAFT_TTL_MS) {
@@ -43,22 +45,41 @@ function loadDraft(): Draft | null {
   }
 }
 
-function saveDraft(patientData: Partial<PatientData>, selectedClinicIds: string[]) {
+function saveDraft(
+  patientData: Partial<PatientData>,
+  selectedClinicIds: string[],
+) {
   try {
-    const draft: Draft = { patientData, selectedClinicIds, savedAt: new Date().toISOString() };
+    const draft: Draft = {
+      patientData,
+      selectedClinicIds,
+      savedAt: new Date().toISOString(),
+    };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  } catch { /* storage full or unavailable */ }
+  } catch {
+    /* storage full or unavailable */
+  }
 }
 
 function clearDraft() {
-  try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 function timeAgo(iso: string): string {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (mins < 1) return "just now";
-  if (mins === 1) return "1 minute ago";
-  if (mins < 60) return `${mins} minutes ago`;
+  if (mins < 1) {
+    return "just now";
+  }
+  if (mins === 1) {
+    return "1 minute ago";
+  }
+  if (mins < 60) {
+    return `${mins} minutes ago`;
+  }
   return "over an hour ago";
 }
 
@@ -97,9 +118,14 @@ export function NewRequestFlow({ clinics }: Props) {
   // useState initialiser runs once — safe alternative to a setState-in-effect
   const [draftBanner, setDraftBanner] = useState<Draft | null>(() => {
     // Only runs on the client (this is a client component)
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") {
+      return null;
+    }
     const draft = loadDraft();
-    if (draft && (draft.patientData.description || draft.patientData.postcode)) {
+    if (
+      draft &&
+      (draft.patientData.description || draft.patientData.postcode)
+    ) {
       return draft;
     }
     return null;
@@ -107,7 +133,9 @@ export function NewRequestFlow({ clinics }: Props) {
 
   // ── beforeunload: warn on browser close/refresh when there's data ──────────
   useEffect(() => {
-    if (!hasData) return;
+    if (!hasData) {
+      return;
+    }
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       e.preventDefault();
     }
@@ -118,7 +146,9 @@ export function NewRequestFlow({ clinics }: Props) {
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   function handleRestoreDraft() {
-    if (!draftBanner) return;
+    if (!draftBanner) {
+      return;
+    }
     setPatientData(draftBanner.patientData);
     setSelectedClinicIds(draftBanner.selectedClinicIds);
     setFormKey((k) => k + 1); // force PatientForm to remount with new initialData
@@ -147,35 +177,40 @@ export function NewRequestFlow({ clinics }: Props) {
     saveDraft(patientData, ids);
   }
 
-  const handleDispatch = useCallback(async (clinicIds: string[]) => {
-    const pd = patientData as PatientData;
-    if (!pd.gender || !pd.age || !pd.postcode || !pd.description) return;
-    setSubmitting(true);
+  const handleDispatch = useCallback(
+    async (clinicIds: string[]) => {
+      const pd = patientData as PatientData;
+      if (!pd.gender || !pd.age || !pd.postcode || !pd.description) {
+        return;
+      }
+      setSubmitting(true);
 
-    const res = await fetch("/api/requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        patientGender: pd.gender,
-        patientAge: pd.age,
-        postcode: pd.postcode,
-        caseDescription: pd.description,
-        clinicIds,
-      }),
-    });
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientGender: pd.gender,
+          patientAge: pd.age,
+          postcode: pd.postcode,
+          caseDescription: pd.description,
+          clinicIds,
+        }),
+      });
 
-    setSubmitting(false);
+      setSubmitting(false);
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Failed to create request.");
-      return;
-    }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Failed to create request.");
+        return;
+      }
 
-    clearDraft();
-    router.push("/dashboard");
-    router.refresh();
-  }, [patientData, router]);
+      clearDraft();
+      router.push("/dashboard");
+      router.refresh();
+    },
+    [patientData, router],
+  );
 
   return (
     <div className="flex-1 min-h-screen">
@@ -295,8 +330,8 @@ function StepIndicator({
             stage === 2
               ? "bg-brand-600 text-white border-brand-600"
               : canAdvance
-              ? "bg-brand-50 text-brand-600 border-brand-400 cursor-pointer"
-              : "bg-brand-50 text-brand-300 border-brand-200"
+                ? "bg-brand-50 text-brand-600 border-brand-400 cursor-pointer"
+                : "bg-brand-50 text-brand-300 border-brand-200"
           }`}
           onClick={stage === 1 && canAdvance ? onAdvance : undefined}
         >
@@ -309,8 +344,8 @@ function StepIndicator({
             stage === 2
               ? "text-brand-800"
               : canAdvance
-              ? "text-brand-600 hover:underline cursor-pointer"
-              : "text-gray-400 cursor-not-allowed"
+                ? "text-brand-600 hover:underline cursor-pointer"
+                : "text-gray-400 cursor-not-allowed"
           }`}
         >
           Clinics
@@ -322,7 +357,16 @@ function StepIndicator({
 
 function CheckIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -330,7 +374,17 @@ function CheckIcon() {
 
 function DraftIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-600 shrink-0">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-yellow-600 shrink-0"
+    >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="12" y1="18" x2="12" y2="12" />

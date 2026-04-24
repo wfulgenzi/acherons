@@ -53,7 +53,7 @@ export async function upsertForUser(
   tx: Tx,
   userId: string,
   orgId: string,
-  role: "member" | "admin"
+  role: "member" | "admin",
 ) {
   const existing = await tx
     .select({ id: memberships.id })
@@ -62,7 +62,10 @@ export async function upsertForUser(
     .limit(1);
 
   if (existing[0]) {
-    await tx.update(memberships).set({ orgId, role }).where(eq(memberships.userId, userId));
+    await tx
+      .update(memberships)
+      .set({ orgId, role })
+      .where(eq(memberships.userId, userId));
   } else {
     await tx.insert(memberships).values({ userId, orgId, role });
   }
@@ -76,7 +79,9 @@ export async function deleteByUserId(tx: Tx, userId: string): Promise<boolean> {
     .where(eq(memberships.userId, userId))
     .limit(1);
 
-  if (!existing[0]) return false;
+  if (!existing[0]) {
+    return false;
+  }
 
   await tx.delete(memberships).where(eq(memberships.userId, userId));
   return true;

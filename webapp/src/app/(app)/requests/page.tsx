@@ -14,15 +14,19 @@ import {
 
 export default async function RequestsPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership) redirect("/onboarding");
+  if (!membership) {
+    redirect("/onboarding");
+  }
 
   if (membership.orgType === "clinic") {
     const rows = await withRLS(
       { userId: session.user.id, orgId: membership.orgId },
-      (tx) => requestsRepo.findAccessibleByClinic(tx, membership.orgId)
+      (tx) => requestsRepo.findAccessibleByClinic(tx, membership.orgId),
     );
 
     const items: ClinicRequestItem[] = rows.map((r) => ({
@@ -42,7 +46,7 @@ export default async function RequestsPage() {
 
   const rows = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
-    (tx) => requestsRepo.findOpenByDispatcher(tx, membership.orgId)
+    (tx) => requestsRepo.findOpenByDispatcher(tx, membership.orgId),
   );
 
   const data: RequestRow[] = rows.map((r) => ({

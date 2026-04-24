@@ -13,7 +13,9 @@ export function TodaySchedule({ items }: { items: TodayItem[] }) {
     <div className="bg-brand-50 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-900">Today&apos;s schedule</h2>
+        <h2 className="text-sm font-bold text-gray-900">
+          Today&apos;s schedule
+        </h2>
         <button className="text-xs font-medium text-brand-600 hover:text-brand-800 transition-colors">
           Open calendar →
         </button>
@@ -30,7 +32,7 @@ export function TodaySchedule({ items }: { items: TodayItem[] }) {
             {items.map((item, i) => {
               const durationMins = getDurationMins(
                 item.confirmedStart,
-                item.confirmedEnd
+                item.confirmedEnd,
               );
               const isNow =
                 item.confirmedStart <= new Date() &&
@@ -64,7 +66,9 @@ export function TodaySchedule({ items }: { items: TodayItem[] }) {
                   {/* Info */}
                   <div className="min-w-0 pb-2">
                     <p className="text-sm font-semibold text-gray-900 leading-tight">
-                      {item.patientAge ? `${item.patientAge}y patient` : "Patient"}
+                      {item.patientAge
+                        ? `${item.patientAge}y patient`
+                        : "Patient"}
                       {isNow && (
                         <span className="ml-2 text-[10px] font-bold text-brand-600 bg-brand-100 px-1.5 py-0.5 rounded-full">
                           NOW

@@ -23,10 +23,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export default async function RequestDetailPage({ params }: RouteContext) {
   const { id } = await params;
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
+  if (!membership || membership.orgType !== "dispatch") {
+    redirect("/dashboard");
+  }
 
   const [req, clinicRows, proposalRows] = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
@@ -35,10 +39,12 @@ export default async function RequestDetailPage({ params }: RouteContext) {
         requestsRepo.findByIdForDispatcher(tx, id, membership.orgId),
         rcaRepo.findClinicsOnRequest(tx, id),
         proposalsRepo.findByRequestId(tx, id),
-      ])
+      ]),
   );
 
-  if (!req) notFound();
+  if (!req) {
+    notFound();
+  }
 
   const creator = await requestsRepo.findCreator(db, req.createdByUserId);
 
@@ -60,7 +66,9 @@ export default async function RequestDetailPage({ params }: RouteContext) {
     createdAt: r.proposal.createdAt.toISOString(),
   }));
 
-  const pendingCount = proposalItems.filter((p) => p.status === "pending").length;
+  const pendingCount = proposalItems.filter(
+    (p) => p.status === "pending",
+  ).length;
   const shortId = req.id.slice(0, 8).toUpperCase();
   const creatorLabel = creator?.name || creator?.email || "Unknown";
   const createdLabel =
@@ -70,13 +78,19 @@ export default async function RequestDetailPage({ params }: RouteContext) {
       month: "short",
     }) +
     ", " +
-    req.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    req.createdAt.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const genderLabel =
-    req.patientGender === "male" ? "Male"
-    : req.patientGender === "female" ? "Female"
-    : req.patientGender === "other" ? "Other"
-    : "Unknown";
+    req.patientGender === "male"
+      ? "Male"
+      : req.patientGender === "female"
+        ? "Female"
+        : req.patientGender === "other"
+          ? "Other"
+          : "Unknown";
 
   return (
     <div className="flex-1 min-h-screen">
@@ -86,7 +100,8 @@ export default async function RequestDetailPage({ params }: RouteContext) {
           <p className="text-sm text-gray-400 mt-0.5">
             {genderLabel}
             {req.patientAge != null ? ` · ${req.patientAge} years` : ""}
-            {" · postcode "}{req.postcode}
+            {" · postcode "}
+            {req.postcode}
           </p>
         </div>
         <button
@@ -124,13 +139,17 @@ export default async function RequestDetailPage({ params }: RouteContext) {
               </Link>
             )}
           </div>
-          <p className="text-sm text-gray-700 leading-relaxed">{req.caseDescription}</p>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            {req.caseDescription}
+          </p>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-5 items-stretch">
           <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-bold text-gray-900">Clinics on this request</h2>
+              <h2 className="text-sm font-bold text-gray-900">
+                Clinics on this request
+              </h2>
               <span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2.5 py-1 rounded-full border border-brand-200">
                 {clinics.length} selected
               </span>
@@ -140,7 +159,9 @@ export default async function RequestDetailPage({ params }: RouteContext) {
                 <ClinicCard key={clinic.id} clinic={clinic} />
               ))}
               {clinics.length === 0 && (
-                <p className="col-span-2 text-sm text-gray-400">No clinics assigned.</p>
+                <p className="col-span-2 text-sm text-gray-400">
+                  No clinics assigned.
+                </p>
               )}
             </div>
           </div>
@@ -159,7 +180,7 @@ export default async function RequestDetailPage({ params }: RouteContext) {
               </span>
             )}
           </div>
-          <ProposalsList items={proposalItems} requestId={id} />
+          <ProposalsList items={proposalItems} />
         </div>
       </div>
     </div>
@@ -175,9 +196,13 @@ function ClinicCard({ clinic }: { clinic: ClinicOnRequest }) {
       <div className="flex items-start gap-2">
         <ClinicBuildingIcon />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 leading-tight">{clinic.name}</p>
+          <p className="text-sm font-semibold text-gray-900 leading-tight">
+            {clinic.name}
+          </p>
           {clinic.address && (
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{clinic.address}</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">
+              {clinic.address}
+            </p>
           )}
           {todaySlots.length > 0 && (
             <p className="text-xs text-brand-600 font-medium mt-1.5">
@@ -197,28 +222,50 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: "bg-red-50 text-red-600 border-red-200",
   };
   return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg[status] ?? cfg.open}`}>
+    <span
+      className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg[status] ?? cfg.open}`}
+    >
       {status}
     </span>
   );
 }
 
 function getTodaySlots(hours: OpeningHours | null): [string, string][] {
-  if (!hours) return [];
+  if (!hours) {
+    return [];
+  }
   const todayIdx = (new Date().getDay() + 6) % 7;
   return hours.find((d) => d.day === todayIdx)?.slots ?? [];
 }
 
 function ChevronLeftIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="15 18 9 12 15 6" />
     </svg>
   );
 }
 function EditIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
@@ -226,7 +273,16 @@ function EditIcon() {
 }
 function BellIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
@@ -234,7 +290,17 @@ function BellIcon() {
 }
 function ClinicBuildingIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500 shrink-0 mt-0.5">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-brand-500 shrink-0 mt-0.5"
+    >
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>

@@ -18,7 +18,9 @@ export function MembershipDisplay({ membership, onRemove }: Props) {
   const [loading, setLoading] = useState(false);
 
   async function handleRemove() {
-    if (!window.confirm("Remove this user's organisation membership?")) return;
+    if (!window.confirm("Remove this user's organisation membership?")) {
+      return;
+    }
     setLoading(true);
     await onRemove();
     setLoading(false);
@@ -27,7 +29,9 @@ export function MembershipDisplay({ membership, onRemove }: Props) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm font-medium text-gray-900">{membership.orgName}</p>
+        <p className="text-sm font-medium text-gray-900">
+          {membership.orgName}
+        </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -36,7 +40,8 @@ export function MembershipDisplay({ membership, onRemove }: Props) {
                 : "bg-gray-100 text-gray-600"
             }`}
           >
-            {membership.orgType.charAt(0).toUpperCase() + membership.orgType.slice(1)}
+            {membership.orgType.charAt(0).toUpperCase() +
+              membership.orgType.slice(1)}
           </span>
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
             {membership.role.charAt(0).toUpperCase() + membership.role.slice(1)}

@@ -26,8 +26,14 @@ const markerIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-export function RequestClinicsMapInner({ clinics }: { clinics: ClinicForMap[] }) {
-  const mappable = clinics.filter((c) => c.latitude != null && c.longitude != null);
+export function RequestClinicsMapInner({
+  clinics,
+}: {
+  clinics: ClinicForMap[];
+}) {
+  const mappable = clinics.filter(
+    (c) => c.latitude != null && c.longitude != null,
+  );
 
   const defaultCenter: [number, number] =
     mappable.length > 0
@@ -56,8 +62,12 @@ export function RequestClinicsMapInner({ clinics }: { clinics: ClinicForMap[] })
           icon={markerIcon}
         >
           <Popup>
-            <div className="text-sm font-semibold">{idx + 1}. {clinic.name}</div>
-            {clinic.address && <div className="text-xs text-gray-500">{clinic.address}</div>}
+            <div className="text-sm font-semibold">
+              {idx + 1}. {clinic.name}
+            </div>
+            {clinic.address && (
+              <div className="text-xs text-gray-500">{clinic.address}</div>
+            )}
           </Popup>
         </Marker>
       ))}

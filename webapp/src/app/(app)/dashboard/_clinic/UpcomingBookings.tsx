@@ -13,7 +13,9 @@ export function UpcomingBookings({ items }: { items: UpcomingBookingItem[] }) {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-4">
-        <h2 className="text-base font-bold text-gray-900">Upcoming this week</h2>
+        <h2 className="text-base font-bold text-gray-900">
+          Upcoming this week
+        </h2>
         <button className="text-xs font-medium text-brand-600 hover:text-brand-800 transition-colors">
           Calendar →
         </button>
@@ -31,7 +33,7 @@ export function UpcomingBookings({ items }: { items: UpcomingBookingItem[] }) {
             {items.map((item) => {
               const durationMins = getDurationMins(
                 item.confirmedStart,
-                item.confirmedEnd
+                item.confirmedEnd,
               );
               return (
                 <li

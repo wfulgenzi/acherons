@@ -7,8 +7,10 @@ import type { OpeningHours } from "@/db/schema";
 
 // ── Haversine distance (km) ────────────────────────────────────────────────
 function haversineKm(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
 ): number {
   const R = 6371;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -25,22 +27,33 @@ const GEO_CACHE_PREFIX = "acherons:geo:";
 
 function getCachedGeo(postcode: string): [number, number] | null {
   try {
-    const raw = sessionStorage.getItem(GEO_CACHE_PREFIX + postcode.toLowerCase());
-    if (!raw) return null;
+    const raw = sessionStorage.getItem(
+      GEO_CACHE_PREFIX + postcode.toLowerCase(),
+    );
+    if (!raw) {
+      return null;
+    }
     return JSON.parse(raw) as [number, number];
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function setCachedGeo(postcode: string, coords: [number, number]) {
   try {
-    sessionStorage.setItem(GEO_CACHE_PREFIX + postcode.toLowerCase(), JSON.stringify(coords));
-  } catch { /* storage full */ }
+    sessionStorage.setItem(
+      GEO_CACHE_PREFIX + postcode.toLowerCase(),
+      JSON.stringify(coords),
+    );
+  } catch {
+    /* storage full */
+  }
 }
 
 // Dynamically import the Leaflet map — must not run on the server
 const ClinicMapInner = dynamic(
   () => import("./ClinicMapInner").then((m) => m.ClinicMapInner),
-  { ssr: false, loading: () => <MapPlaceholder /> }
+  { ssr: false, loading: () => <MapPlaceholder /> },
 );
 
 interface Props {
@@ -52,9 +65,16 @@ interface Props {
   onSelectionChange?: (ids: string[]) => void;
 }
 
-export function ClinicSelector({ clinics, postcode, onDispatch, submitting, initialSelectedIds, onSelectionChange }: Props) {
+export function ClinicSelector({
+  clinics,
+  postcode,
+  onDispatch,
+  submitting,
+  initialSelectedIds,
+  onSelectionChange,
+}: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(initialSelectedIds ?? [])
+    () => new Set(initialSelectedIds ?? []),
   );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
@@ -73,11 +93,14 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcode)}&limit=1`,
-          { headers: { "Accept-Language": "en" } }
+          { headers: { "Accept-Language": "en" } },
         );
         const data = await res.json();
         if (data[0]) {
-          const coords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+          const coords: [number, number] = [
+            parseFloat(data[0].lat),
+            parseFloat(data[0].lon),
+          ];
           setMapCenter(coords);
           setCachedGeo(postcode, coords);
         }
@@ -90,7 +113,9 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
 
   // Sort clinics by distance from postcode once we have a centre coordinate
   const sortedClinics = useMemo(() => {
-    if (!mapCenter) return clinics;
+    if (!mapCenter) {
+      return clinics;
+    }
     return [...clinics]
       .map((c) => ({
         ...c,
@@ -100,9 +125,15 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
             : null,
       }))
       .sort((a, b) => {
-        if (a.distanceKm == null && b.distanceKm == null) return 0;
-        if (a.distanceKm == null) return 1;
-        if (b.distanceKm == null) return -1;
+        if (a.distanceKm == null && b.distanceKm == null) {
+          return 0;
+        }
+        if (a.distanceKm == null) {
+          return 1;
+        }
+        if (b.distanceKm == null) {
+          return -1;
+        }
         return a.distanceKm - b.distanceKm;
       });
   }, [clinics, mapCenter]);
@@ -112,8 +143,11 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
     // synchronously after — calling parent setState inside a child state
     // updater triggers the "setState while rendering" warning.
     const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelectedIds(next);
     onSelectionChange?.(Array.from(next));
   }
@@ -125,8 +159,8 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     toggleClinic(clinicId);
-  // toggleClinic is stable (no external deps), ref is stable — intentional
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // toggleClinic is stable (no external deps), ref is stable — intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -146,7 +180,9 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
           disabled={selectedIds.size === 0 || submitting}
           className="flex items-center gap-2 bg-brand-600 hover:bg-brand-800 disabled:bg-brand-200 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
         >
-          {submitting ? "Dispatching…" : `Dispatch to ${selectedIds.size} clinic${selectedIds.size !== 1 ? "s" : ""} →`}
+          {submitting
+            ? "Dispatching…"
+            : `Dispatch to ${selectedIds.size} clinic${selectedIds.size !== 1 ? "s" : ""} →`}
         </button>
       </div>
 
@@ -184,15 +220,22 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
                   key={clinic.id}
                   clinic={clinic}
                   index={idx + 1}
-                  distanceKm={"distanceKm" in clinic ? (clinic.distanceKm as number | null) : null}
+                  distanceKm={
+                    "distanceKm" in clinic
+                      ? (clinic.distanceKm as number | null)
+                      : null
+                  }
                   isSelected={selectedIds.has(clinic.id)}
                   isHovered={hoveredId === clinic.id}
                   onToggle={() => toggleClinic(clinic.id)}
                   onMouseEnter={() => setHoveredId(clinic.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   refCallback={(el) => {
-                    if (el) listRefs.current.set(clinic.id, el);
-                    else listRefs.current.delete(clinic.id);
+                    if (el) {
+                      listRefs.current.set(clinic.id, el);
+                    } else {
+                      listRefs.current.delete(clinic.id);
+                    }
                   }}
                 />
               ))
@@ -201,7 +244,10 @@ export function ClinicSelector({ clinics, postcode, onDispatch, submitting, init
         </div>
 
         {/* Right: map */}
-        <div className="sticky top-24 rounded-2xl overflow-hidden border border-gray-100 shadow-sm" style={{ height: "calc(100vh - 280px)" }}>
+        <div
+          className="sticky top-24 rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+          style={{ height: "calc(100vh - 280px)" }}
+        >
           <ClinicMapInner
             clinics={clinics}
             center={mapCenter}
@@ -260,7 +306,16 @@ function ClinicRow({
           }`}
         >
           {isSelected && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           )}
@@ -270,7 +325,9 @@ function ClinicRow({
           {/* Name + index + distance */}
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-sm font-semibold text-gray-900 leading-tight">
-              <span className="text-brand-500 mr-1.5 font-medium">{index}.</span>
+              <span className="text-brand-500 mr-1.5 font-medium">
+                {index}.
+              </span>
               {clinic.name}
             </p>
             {distanceKm != null && (
@@ -301,9 +358,7 @@ function ClinicRow({
           {/* Opening hours */}
           {(today.length > 0 || tomorrow.length > 0) && (
             <div className="grid grid-cols-2 gap-2 mt-3">
-              {today.length > 0 && (
-                <HoursCard label="Today" slots={today} />
-              )}
+              {today.length > 0 && <HoursCard label="Today" slots={today} />}
               {tomorrow.length > 0 && (
                 <HoursCard label="Tomorrow" slots={tomorrow} />
               )}
@@ -315,7 +370,13 @@ function ClinicRow({
   );
 }
 
-function HoursCard({ label, slots }: { label: string; slots: [string, string][] }) {
+function HoursCard({
+  label,
+  slots,
+}: {
+  label: string;
+  slots: [string, string][];
+}) {
   return (
     <div className="bg-brand-50 rounded-lg px-3 py-2">
       <p className="text-[10px] font-semibold text-brand-500 uppercase tracking-wide mb-1">
@@ -333,7 +394,9 @@ function HoursCard({ label, slots }: { label: string; slots: [string, string][] 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getOpeningHours(hours: OpeningHours | null) {
-  if (!hours) return { today: [], tomorrow: [] };
+  if (!hours) {
+    return { today: [], tomorrow: [] };
+  }
   const jsDay = new Date().getDay(); // 0 = Sunday
   const todayIdx = (jsDay + 6) % 7; // 0 = Monday
   const tomorrowIdx = (todayIdx + 1) % 7;
@@ -353,7 +416,17 @@ function MapPlaceholder() {
 
 function PinIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0">
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400 shrink-0"
+    >
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
@@ -362,7 +435,17 @@ function PinIcon() {
 
 function PhoneIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0">
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400 shrink-0"
+    >
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.56 3.3 2 2 0 0 1 3.53 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );

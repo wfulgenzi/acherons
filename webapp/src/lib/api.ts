@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { auth } from "./auth";
 
 export type ApiError = { error: NextResponse };
-export type ApiAdmin = { session: Awaited<ReturnType<typeof auth.api.getSession>> };
+export type ApiAdmin = {
+  session: Awaited<ReturnType<typeof auth.api.getSession>>;
+};
 
 /**
  * Resolves to an error response if the request has no valid session,

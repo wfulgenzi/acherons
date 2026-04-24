@@ -1,4 +1,11 @@
-import { pgTable, pgEnum, uuid, text, jsonb, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  text,
+  jsonb,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { organisations } from "./organisations";
 import { requests } from "./requests";
@@ -19,7 +26,7 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
 
 export type ProposedTimeslot = {
   start: string; // ISO 8601 datetime
-  end: string;   // ISO 8601 datetime
+  end: string; // ISO 8601 datetime
 };
 
 export type ProposedTimeslots = ProposedTimeslot[];

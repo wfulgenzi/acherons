@@ -6,10 +6,14 @@ import { DispatcherDashboard } from "./_dispatcher/DispatcherDashboard";
 
 export default async function DashboardPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership) redirect("/onboarding");
+  if (!membership) {
+    redirect("/onboarding");
+  }
 
   if (membership.orgType === "clinic") {
     return (

@@ -65,7 +65,9 @@ function ProposalCard({ item }: { item: ProposalCardItem }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ClinicIcon />
-          <span className="text-xs font-semibold text-gray-600">{item.clinicName}</span>
+          <span className="text-xs font-semibold text-gray-600">
+            {item.clinicName}
+          </span>
         </div>
         <span className="text-xs text-gray-400 shrink-0">{dateLabel}</span>
       </div>
@@ -90,7 +92,17 @@ function ProposalCard({ item }: { item: ProposalCardItem }) {
 
 function ClinicIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 shrink-0">
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400 shrink-0"
+    >
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>

@@ -10,12 +10,18 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
-  if (session.user.isAdmin) redirect("/admin");
+  if (session.user.isAdmin) {
+    redirect("/admin");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership) redirect("/onboarding");
+  if (!membership) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="flex min-h-screen bg-brand-100">

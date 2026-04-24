@@ -27,10 +27,14 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = v.safeParse(CreateRequestSchema, body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 },
+    );
   }
 
-  const { patientGender, patientAge, postcode, caseDescription, clinicIds } = parsed.output;
+  const { patientGender, patientAge, postcode, caseDescription, clinicIds } =
+    parsed.output;
 
   const newRequest = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
@@ -45,7 +49,7 @@ export async function POST(request: NextRequest) {
       });
       await rcaRepo.insertMany(tx, req.id, membership.orgId, clinicIds);
       return req;
-    }
+    },
   );
 
   return NextResponse.json({ id: newRequest.id }, { status: 201 });

@@ -22,18 +22,30 @@ interface Props {
   onInProgressChange?: (data: Partial<PatientData>) => void;
 }
 
-export function PatientForm({ onNext, initialData, onInProgressChange }: Props) {
+export function PatientForm({
+  onNext,
+  initialData,
+  onInProgressChange,
+}: Props) {
   const [gender, setGender] = useState<PatientData["gender"]>(
-    initialData?.gender ?? "female"
+    initialData?.gender ?? "female",
   );
   const [age, setAge] = useState(
-    initialData?.age != null ? String(initialData.age) : ""
+    initialData?.age != null ? String(initialData.age) : "",
   );
   const [postcode, setPostcode] = useState(initialData?.postcode ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
 
   function notify(patch: Partial<PatientData>) {
-    onInProgressChange?.({ gender, age: age !== "" ? Number(age) : undefined, postcode, description, ...patch });
+    onInProgressChange?.({
+      gender,
+      age: age !== "" ? Number(age) : undefined,
+      postcode,
+      description,
+      ...patch,
+    });
   }
 
   const isValid =
@@ -45,7 +57,9 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isValid) {
+      return;
+    }
     onNext({
       gender,
       age: Number(age),
@@ -67,7 +81,10 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => { setGender(opt.value); notify({ gender: opt.value }); }}
+                onClick={() => {
+                  setGender(opt.value);
+                  notify({ gender: opt.value });
+                }}
                 className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
                   gender === opt.value
                     ? "bg-brand-600 text-white border-brand-600"
@@ -95,7 +112,13 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
               min={0}
               max={150}
               value={age}
-              onChange={(e) => { setAge(e.target.value); notify({ age: e.target.value !== "" ? Number(e.target.value) : undefined }); }}
+              onChange={(e) => {
+                setAge(e.target.value);
+                notify({
+                  age:
+                    e.target.value !== "" ? Number(e.target.value) : undefined,
+                });
+              }}
               placeholder="e.g. 34"
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/10 transition"
             />
@@ -111,7 +134,10 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
               id="postcode"
               type="text"
               value={postcode}
-              onChange={(e) => { setPostcode(e.target.value); notify({ postcode: e.target.value }); }}
+              onChange={(e) => {
+                setPostcode(e.target.value);
+                notify({ postcode: e.target.value });
+              }}
               placeholder="e.g. 75020"
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/10 transition"
             />
@@ -130,7 +156,10 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
             id="description"
             rows={6}
             value={description}
-            onChange={(e) => { setDescription(e.target.value); notify({ description: e.target.value }); }}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              notify({ description: e.target.value });
+            }}
             placeholder="Describe the patient's condition..."
             className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/10 transition resize-none"
           />
@@ -157,7 +186,16 @@ export function PatientForm({ onNext, initialData, onInProgressChange }: Props) 
 
 function ArrowRightIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
     </svg>

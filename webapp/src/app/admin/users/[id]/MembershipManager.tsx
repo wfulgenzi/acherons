@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MembershipDisplay, type CurrentMembership } from "@/components/forms/MembershipDisplay";
+import {
+  MembershipDisplay,
+  type CurrentMembership,
+} from "@/components/forms/MembershipDisplay";
 import { Button } from "@/components/ui/Button";
-import { AssignOrgForm, type OrgOption } from "@/components/forms/AssignOrgForm";
+import {
+  AssignOrgForm,
+  type OrgOption,
+} from "@/components/forms/AssignOrgForm";
 
 // Re-export types so the server page only needs to import from here
 export type { CurrentMembership, OrgOption };
@@ -20,7 +26,9 @@ export function MembershipManager({ userId, membership, allOrgs }: Props) {
   const [assigning, setAssigning] = useState(false);
 
   async function handleRemove() {
-    const res = await fetch(`/api/users/${userId}/membership`, { method: "DELETE" });
+    const res = await fetch(`/api/users/${userId}/membership`, {
+      method: "DELETE",
+    });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       alert(d.error ?? "Failed to remove membership.");
@@ -45,7 +53,9 @@ export function MembershipManager({ userId, membership, allOrgs }: Props) {
   }
 
   if (membership) {
-    return <MembershipDisplay membership={membership} onRemove={handleRemove} />;
+    return (
+      <MembershipDisplay membership={membership} onRemove={handleRemove} />
+    );
   }
 
   if (!assigning) {

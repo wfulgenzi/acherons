@@ -11,7 +11,9 @@ import { orgsRepo } from "@/db/repositories";
 
 export async function GET() {
   const rows = await orgsRepo.findAll(adminDb);
-  return NextResponse.json(rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)));
+  return NextResponse.json(
+    rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -20,7 +22,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const body = await request.json().catch(() => null);
   if (body === null) {
@@ -31,12 +35,22 @@ export async function POST(request: NextRequest) {
   if (!result.success) {
     return NextResponse.json(
       { error: "Validation failed", issues: v.flatten(result.issues) },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const { name, type, address, latitude, longitude, phone, website, mapsUrl, specialisations, openingHours } =
-    result.output;
+  const {
+    name,
+    type,
+    address,
+    latitude,
+    longitude,
+    phone,
+    website,
+    mapsUrl,
+    specialisations,
+    openingHours,
+  } = result.output;
 
   const org = await orgsRepo.create(adminDb, name.trim(), type);
 
@@ -54,5 +68,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json(orgsRepo.formatOrg(org, profile ?? null), { status: 201 });
+  return NextResponse.json(orgsRepo.formatOrg(org, profile ?? null), {
+    status: 201,
+  });
 }

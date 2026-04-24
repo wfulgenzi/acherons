@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = v.safeParse(CreateProposalSchema, body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 },
+    );
   }
 
   const { requestId, proposedTimeslots, notes } = parsed.output;
@@ -39,12 +42,27 @@ export async function POST(request: NextRequest) {
     { userId: session.user.id, orgId: membership.orgId },
     async (tx) => {
       const req = await requestsRepo.findOpenById(tx, requestId);
-      if (!req) return { error: "Request not found or not open.", status: 404 } as const;
+      if (!req) {
+        return {
+          error: "Request not found or not open.",
+          status: 404,
+        } as const;
+      }
 
-      const access = await rcaRepo.findByRequestAndClinic(tx, requestId, membership.orgId);
-      if (!access) return { error: "Forbidden", status: 403 } as const;
+      const access = await rcaRepo.findByRequestAndClinic(
+        tx,
+        requestId,
+        membership.orgId,
+      );
+      if (!access) {
+        return { error: "Forbidden", status: 403 } as const;
+      }
 
-      const existing = await proposalsRepo.findByRequestAndClinic(tx, requestId, membership.orgId);
+      const existing = await proposalsRepo.findByRequestAndClinic(
+        tx,
+        requestId,
+        membership.orgId,
+      );
       if (existing) {
         return {
           error: "You have already submitted a proposal for this request.",
@@ -62,11 +80,14 @@ export async function POST(request: NextRequest) {
       });
 
       return { id: proposal.id } as const;
-    }
+    },
   );
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status },
+    );
   }
 
   return NextResponse.json({ id: result.id }, { status: 201 });

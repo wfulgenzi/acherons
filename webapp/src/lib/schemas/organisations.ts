@@ -14,7 +14,7 @@ const ClinicBase = createInsertSchema(clinicProfiles);
 
 // Individual clinic profile fields, all optional for API use
 const ClinicFields = v.partial(
-  v.omit(ClinicBase, ["orgId", "createdAt", "updatedAt"])
+  v.omit(ClinicBase, ["orgId", "createdAt", "updatedAt"]),
 );
 
 // ---------------------------------------------------------------------------
@@ -26,13 +26,15 @@ const ClinicFields = v.partial(
 export const CreateOrganisationSchema = v.object({
   name: v.pipe(
     v.string("name must be a string"),
-    v.minLength(1, "name is required")
+    v.minLength(1, "name is required"),
   ),
   type: v.omit(OrgBase, ["id", "name", "createdAt", "updatedAt"]).entries.type,
   ...ClinicFields.entries,
 });
 
-export type CreateOrganisationInput = v.InferOutput<typeof CreateOrganisationSchema>;
+export type CreateOrganisationInput = v.InferOutput<
+  typeof CreateOrganisationSchema
+>;
 
 // ---------------------------------------------------------------------------
 // PATCH /api/organisations/:id
@@ -41,4 +43,6 @@ export type CreateOrganisationInput = v.InferOutput<typeof CreateOrganisationSch
 
 export const UpdateOrganisationSchema = v.partial(CreateOrganisationSchema);
 
-export type UpdateOrganisationInput = v.InferOutput<typeof UpdateOrganisationSchema>;
+export type UpdateOrganisationInput = v.InferOutput<
+  typeof UpdateOrganisationSchema
+>;

@@ -26,10 +26,12 @@ type RLSContext = {
  */
 export async function withRLS<T>(
   ctx: RLSContext,
-  fn: (tx: RLSDb) => Promise<T>
+  fn: (tx: RLSDb) => Promise<T>,
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.user_id', ${ctx.userId}, true)`);
+    await tx.execute(
+      sql`SELECT set_config('app.user_id', ${ctx.userId}, true)`,
+    );
     await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
     return fn(tx as unknown as RLSDb);
   });
@@ -43,7 +45,7 @@ export async function withRLS<T>(
  */
 export async function withUserContext<T>(
   userId: string,
-  fn: (tx: Tx) => Promise<T>
+  fn: (tx: Tx) => Promise<T>,
 ): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);

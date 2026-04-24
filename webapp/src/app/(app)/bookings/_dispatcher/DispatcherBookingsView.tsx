@@ -38,7 +38,8 @@ const columns: TableColumn<BookingRow>[] = [
               hour: "2-digit",
               minute: "2-digit",
             })}
-            {" · "}{mins} min
+            {" · "}
+            {mins} min
           </p>
         </div>
       );
@@ -66,9 +67,7 @@ const columns: TableColumn<BookingRow>[] = [
   {
     key: "clinic",
     label: "Clinic",
-    render: (row) => (
-      <p className="text-sm text-gray-700">{row.clinicName}</p>
-    ),
+    render: (row) => <p className="text-sm text-gray-700">{row.clinicName}</p>,
   },
 ];
 
@@ -84,7 +83,7 @@ export function DispatcherBookingsView({ data, today }: Props) {
   const filtered = data.filter((r) =>
     filter === "upcoming"
       ? new Date(r.confirmedStart).getTime() >= nowMs
-      : new Date(r.confirmedStart).getTime() < nowMs
+      : new Date(r.confirmedStart).getTime() < nowMs,
   );
 
   // Upcoming: ascending (soonest first). Past: descending (most recent first).
@@ -96,7 +95,7 @@ export function DispatcherBookingsView({ data, today }: Props) {
   });
 
   const upcomingCount = data.filter(
-    (r) => new Date(r.confirmedStart).getTime() >= nowMs
+    (r) => new Date(r.confirmedStart).getTime() >= nowMs,
   ).length;
   const pastCount = data.length - upcomingCount;
 
@@ -161,8 +160,8 @@ function TimeFilterTabs({
                 active
                   ? "bg-white/20 text-white"
                   : tab.count > 0
-                  ? "bg-brand-100 text-brand-800"
-                  : "bg-gray-100 text-gray-400"
+                    ? "bg-brand-100 text-brand-800"
+                    : "bg-gray-100 text-gray-400"
               }`}
             >
               {tab.count}

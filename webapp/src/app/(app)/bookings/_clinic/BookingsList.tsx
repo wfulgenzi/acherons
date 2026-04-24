@@ -10,9 +10,7 @@ const columns: TableColumn<ClinicBookingItem>[] = [
     render: (row) => {
       const start = new Date(row.confirmedStart);
       const end = new Date(row.confirmedEnd);
-      const mins = Math.round(
-        (end.getTime() - start.getTime()) / 60_000
-      );
+      const mins = Math.round((end.getTime() - start.getTime()) / 60_000);
       return (
         <div>
           <p className="text-sm font-semibold text-gray-900">
@@ -39,7 +37,8 @@ const columns: TableColumn<ClinicBookingItem>[] = [
     label: "Patient",
     render: (row) => (
       <p className="text-sm font-semibold text-brand-800">
-        {genderInitial(row.patientGender)} · {row.patientAge != null ? `${row.patientAge}y` : "?"}
+        {genderInitial(row.patientGender)} ·{" "}
+        {row.patientAge != null ? `${row.patientAge}y` : "?"}
       </p>
     ),
   },
@@ -56,11 +55,7 @@ const columns: TableColumn<ClinicBookingItem>[] = [
 
 export function BookingsList({ items }: { items: ClinicBookingItem[] }) {
   return (
-    <TableList
-      columns={columns}
-      data={items}
-      emptyMessage="No bookings yet."
-    />
+    <TableList columns={columns} data={items} emptyMessage="No bookings yet." />
   );
 }
 

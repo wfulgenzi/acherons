@@ -7,14 +7,18 @@ import { NewRequestFlow, type ClinicItem } from "./NewRequestFlow";
 
 export default async function NewRequestPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
+  if (!membership || membership.orgType !== "dispatch") {
+    redirect("/dashboard");
+  }
 
   const clinicRows = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
-    (tx) => orgsRepo.findAllClinics(tx)
+    (tx) => orgsRepo.findAllClinics(tx),
   );
 
   const clinics: ClinicItem[] = clinicRows.map((r) => ({

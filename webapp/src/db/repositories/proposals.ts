@@ -54,7 +54,11 @@ export async function findByDispatcher(tx: RLSDb, dispatcherOrgId: string) {
 }
 
 /** Dispatcher dashboard: pending proposals needing review, with clinic + request info. */
-export async function findPendingByDispatcher(tx: RLSDb, dispatcherOrgId: string, limitN = 6) {
+export async function findPendingByDispatcher(
+  tx: RLSDb,
+  dispatcherOrgId: string,
+  limitN = 6,
+) {
   return tx
     .select({
       proposal: proposals,
@@ -64,7 +68,12 @@ export async function findPendingByDispatcher(tx: RLSDb, dispatcherOrgId: string
     .from(proposals)
     .innerJoin(requests, eq(requests.id, proposals.requestId))
     .innerJoin(organisations, eq(organisations.id, proposals.clinicOrgId))
-    .where(and(eq(proposals.dispatcherOrgId, dispatcherOrgId), eq(proposals.status, "pending")))
+    .where(
+      and(
+        eq(proposals.dispatcherOrgId, dispatcherOrgId),
+        eq(proposals.status, "pending"),
+      ),
+    )
     .orderBy(desc(proposals.createdAt))
     .limit(limitN);
 }
@@ -83,7 +92,11 @@ export async function findByRequestId(tx: RLSDb, requestId: string) {
 }
 
 /** Clinic: recent proposals with request info (for clinic dashboard). */
-export async function findRecentByClinic(tx: RLSDb, clinicOrgId: string, limitN = 5) {
+export async function findRecentByClinic(
+  tx: RLSDb,
+  clinicOrgId: string,
+  limitN = 5,
+) {
   return tx
     .select({ proposal: proposals, request: requests })
     .from(proposals)
@@ -97,19 +110,28 @@ export async function findRecentByClinic(tx: RLSDb, clinicOrgId: string, limitN 
 export async function findByRequestAndClinic(
   tx: RLSDb,
   requestId: string,
-  clinicOrgId: string
+  clinicOrgId: string,
 ) {
   const rows = await tx
     .select({ id: proposals.id })
     .from(proposals)
-    .where(and(eq(proposals.requestId, requestId), eq(proposals.clinicOrgId, clinicOrgId)))
+    .where(
+      and(
+        eq(proposals.requestId, requestId),
+        eq(proposals.clinicOrgId, clinicOrgId),
+      ),
+    )
     .limit(1);
   return rows[0] ?? null;
 }
 
 /** Fetch a single proposal by id. */
 export async function findById(tx: RLSDb, id: string) {
-  const rows = await tx.select().from(proposals).where(eq(proposals.id, id)).limit(1);
+  const rows = await tx
+    .select()
+    .from(proposals)
+    .where(eq(proposals.id, id))
+    .limit(1);
   return rows[0] ?? null;
 }
 

@@ -36,7 +36,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     { userId: session.user.id, orgId: membership.orgId },
     async (tx) => {
       const proposal = await proposalsRepo.findById(tx, id);
-      if (!proposal) return { error: "Proposal not found.", status: 404 } as const;
+      if (!proposal) {
+        return { error: "Proposal not found.", status: 404 } as const;
+      }
 
       // RLS ensures dispatcher_org_id = app.org_id, but guard explicitly
       if (proposal.dispatcherOrgId !== membership.orgId) {
@@ -44,7 +46,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
 
       if (proposal.status !== "pending") {
-        return { error: "Proposal is no longer pending.", status: 409 } as const;
+        return {
+          error: "Proposal is no longer pending.",
+          status: 409,
+        } as const;
       }
 
       if (action === "refuse") {
@@ -55,7 +60,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       // Accept: create booking + confirm the request atomically
       const slots = proposal.proposedTimeslots;
       if (!slots || slots.length === 0) {
-        return { error: "No timeslots on this proposal.", status: 400 } as const;
+        return {
+          error: "No timeslots on this proposal.",
+          status: 400,
+        } as const;
       }
 
       const firstSlot = slots[0];
@@ -71,11 +79,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       await requestsRepo.confirm(tx, proposal.requestId);
 
       return { ok: true } as const;
-    }
+    },
   );
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status },
+    );
   }
 
   return NextResponse.json({ ok: true });

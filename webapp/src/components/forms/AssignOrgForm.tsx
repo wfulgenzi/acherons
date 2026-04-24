@@ -16,9 +16,13 @@ interface Props {
 }
 
 export function AssignOrgForm({ allOrgs, onAssign, onCancel }: Props) {
-  const [typeFilter, setTypeFilter] = useState<"all" | "clinic" | "dispatch">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "clinic" | "dispatch">(
+    "all",
+  );
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<"member" | "admin">("member");
+  const [selectedRole, setSelectedRole] = useState<"member" | "admin">(
+    "member",
+  );
   const [loading, setLoading] = useState(false);
 
   const comboOptions: ComboboxOption[] = allOrgs
@@ -35,7 +39,9 @@ export function AssignOrgForm({ allOrgs, onAssign, onCancel }: Props) {
   }
 
   async function handleSubmit() {
-    if (!selectedOrgId) return;
+    if (!selectedOrgId) {
+      return;
+    }
     setLoading(true);
     await onAssign(selectedOrgId, selectedRole);
     setLoading(false);

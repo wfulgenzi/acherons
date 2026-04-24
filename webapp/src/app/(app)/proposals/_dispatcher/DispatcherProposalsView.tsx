@@ -103,7 +103,10 @@ const columns: TableColumn<DispatcherProposalRow>[] = [
             month: "short",
           })}
           {", "}
-          {d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+          {d.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </span>
       );
     },
@@ -155,8 +158,8 @@ export function DispatcherProposalsView({
                     active
                       ? "bg-white/20 text-white"
                       : counts[tab.key] > 0
-                      ? "bg-brand-100 text-brand-800"
-                      : "bg-gray-100 text-gray-400"
+                        ? "bg-brand-100 text-brand-800"
+                        : "bg-gray-100 text-gray-400"
                   }`}
                 >
                   {counts[tab.key]}

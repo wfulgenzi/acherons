@@ -29,7 +29,9 @@ export function ProposalModal({ request, onClose, onSuccess }: Props) {
   // Close on Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -70,10 +72,13 @@ export function ProposalModal({ request, onClose, onSuccess }: Props) {
   }
 
   const genderLabel =
-    request.patientGender === "male" ? "Male"
-    : request.patientGender === "female" ? "Female"
-    : request.patientGender === "other" ? "Other"
-    : "Unknown";
+    request.patientGender === "male"
+      ? "Male"
+      : request.patientGender === "female"
+        ? "Female"
+        : request.patientGender === "other"
+          ? "Other"
+          : "Unknown";
 
   const patientSummary = [
     genderLabel,
@@ -96,7 +101,8 @@ export function ProposalModal({ request, onClose, onSuccess }: Props) {
           <div>
             <h2 className="text-lg font-bold text-brand-800">Propose a slot</h2>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-              The dispatcher will review and accept the proposed time on the patient&apos;s behalf.
+              The dispatcher will review and accept the proposed time on the
+              patient&apos;s behalf.
             </p>
           </div>
           <button
@@ -111,7 +117,9 @@ export function ProposalModal({ request, onClose, onSuccess }: Props) {
         <div className="mx-8 mb-6 bg-brand-50 border border-brand-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <PersonIcon />
-            <span className="text-sm font-semibold text-brand-800">{patientSummary}</span>
+            <span className="text-sm font-semibold text-brand-800">
+              {patientSummary}
+            </span>
           </div>
           <p className="text-sm font-bold text-gray-900 leading-snug mb-1">
             {request.caseDescription.length > 80
@@ -205,29 +213,74 @@ export function ProposalModal({ request, onClose, onSuccess }: Props) {
 
 function XIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
 function PersonIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500 shrink-0">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-brand-500 shrink-0"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
 function CalendarIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400"
+    >
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   );
 }
 function ClockIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-gray-400"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }

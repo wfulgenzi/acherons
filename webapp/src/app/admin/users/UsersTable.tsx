@@ -29,10 +29,11 @@ export function UsersTable({ data, currentUserId }: UsersTableProps) {
   async function handleDelete(row: UserRow) {
     if (
       !window.confirm(
-        `Delete user "${row.name || row.email}"? This cannot be undone.`
+        `Delete user "${row.name || row.email}"? This cannot be undone.`,
       )
-    )
+    ) {
       return;
+    }
 
     setDeletingId(row.id);
     const res = await fetch(`/api/users/${row.id}`, { method: "DELETE" });
@@ -79,15 +80,16 @@ export function UsersTable({ data, currentUserId }: UsersTableProps) {
                 <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                   {/* User */}
                   <td className="px-4 py-3.5">
-                    <Link href={`/admin/users/${row.id}`} className="flex items-center gap-2.5 group">
+                    <Link
+                      href={`/admin/users/${row.id}`}
+                      className="flex items-center gap-2.5 group"
+                    >
                       <div className="w-7 h-7 rounded-full bg-brand-200 text-brand-800 text-xs font-semibold flex items-center justify-center shrink-0">
                         {(row.name || row.email)[0].toUpperCase()}
                       </div>
                       <div>
                         <p className="font-medium text-brand-800 group-hover:text-brand-vivid transition-colors">
-                          {row.name ?? (
-                            <span className="text-gray-400">—</span>
-                          )}
+                          {row.name ?? <span className="text-gray-400">—</span>}
                           {isSelf && (
                             <span className="ml-1.5 text-[10px] font-semibold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
                               YOU
@@ -116,9 +118,7 @@ export function UsersTable({ data, currentUserId }: UsersTableProps) {
                   {/* Role */}
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      {row.isAdmin && (
-                        <Badge variant="brand">Admin</Badge>
-                      )}
+                      {row.isAdmin && <Badge variant="brand">Admin</Badge>}
                       {row.membershipRole && (
                         <Badge variant="muted">
                           {row.membershipRole.charAt(0).toUpperCase() +
@@ -147,7 +147,11 @@ export function UsersTable({ data, currentUserId }: UsersTableProps) {
                       size="sm"
                       onClick={() => handleDelete(row)}
                       disabled={isSelf || deletingId === row.id}
-                      title={isSelf ? "You cannot delete your own account" : "Delete user"}
+                      title={
+                        isSelf
+                          ? "You cannot delete your own account"
+                          : "Delete user"
+                      }
                     >
                       {deletingId === row.id ? "Deleting…" : "Delete"}
                     </Button>

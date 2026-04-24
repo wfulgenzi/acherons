@@ -31,9 +31,7 @@ const columns: TableColumn<ClinicRow>[] = [
   {
     key: "phone",
     label: "Phone",
-    render: (row) => (
-      <span className="text-gray-500">{row.phone ?? "—"}</span>
-    ),
+    render: (row) => <span className="text-gray-500">{row.phone ?? "—"}</span>,
   },
   {
     key: "specialisations",
@@ -42,7 +40,9 @@ const columns: TableColumn<ClinicRow>[] = [
       row.specialisations?.length ? (
         <div className="flex flex-wrap gap-1">
           {row.specialisations.slice(0, 3).map((s) => (
-            <Badge key={s} variant="green">{s}</Badge>
+            <Badge key={s} variant="green">
+              {s}
+            </Badge>
           ))}
           {row.specialisations.length > 3 && (
             <span className="text-xs text-gray-400">

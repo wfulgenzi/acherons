@@ -6,7 +6,7 @@ import { requestClinicAccess, organisations, clinicProfiles } from "../schema";
 export async function findByRequestAndClinic(
   tx: RLSDb,
   requestId: string,
-  clinicOrgId: string
+  clinicOrgId: string,
 ) {
   const rows = await tx
     .select()
@@ -14,8 +14,8 @@ export async function findByRequestAndClinic(
     .where(
       and(
         eq(requestClinicAccess.requestId, requestId),
-        eq(requestClinicAccess.clinicOrgId, clinicOrgId)
-      )
+        eq(requestClinicAccess.clinicOrgId, clinicOrgId),
+      ),
     )
     .limit(1);
   return rows[0] ?? null;
@@ -42,7 +42,10 @@ export async function findClinicsOnRequest(tx: RLSDb, requestId: string) {
       openingHours: clinicProfiles.openingHours,
     })
     .from(requestClinicAccess)
-    .innerJoin(organisations, eq(organisations.id, requestClinicAccess.clinicOrgId))
+    .innerJoin(
+      organisations,
+      eq(organisations.id, requestClinicAccess.clinicOrgId),
+    )
     .leftJoin(clinicProfiles, eq(clinicProfiles.orgId, organisations.id))
     .where(eq(requestClinicAccess.requestId, requestId));
 }
@@ -52,12 +55,20 @@ export async function insertMany(
   tx: RLSDb,
   requestId: string,
   dispatcherOrgId: string,
-  clinicOrgIds: string[]
+  clinicOrgIds: string[],
 ) {
-  if (clinicOrgIds.length === 0) return;
-  await tx.insert(requestClinicAccess).values(
-    clinicOrgIds.map((clinicOrgId) => ({ requestId, dispatcherOrgId, clinicOrgId }))
-  );
+  if (clinicOrgIds.length === 0) {
+    return;
+  }
+  await tx
+    .insert(requestClinicAccess)
+    .values(
+      clinicOrgIds.map((clinicOrgId) => ({
+        requestId,
+        dispatcherOrgId,
+        clinicOrgId,
+      })),
+    );
 }
 
 /** Replace the entire clinic access list for a request atomically. */
@@ -65,12 +76,20 @@ export async function replaceAll(
   tx: RLSDb,
   requestId: string,
   dispatcherOrgId: string,
-  clinicOrgIds: string[]
+  clinicOrgIds: string[],
 ) {
-  await tx.delete(requestClinicAccess).where(eq(requestClinicAccess.requestId, requestId));
+  await tx
+    .delete(requestClinicAccess)
+    .where(eq(requestClinicAccess.requestId, requestId));
   if (clinicOrgIds.length > 0) {
-    await tx.insert(requestClinicAccess).values(
-      clinicOrgIds.map((clinicOrgId) => ({ requestId, dispatcherOrgId, clinicOrgId }))
-    );
+    await tx
+      .insert(requestClinicAccess)
+      .values(
+        clinicOrgIds.map((clinicOrgId) => ({
+          requestId,
+          dispatcherOrgId,
+          clinicOrgId,
+        })),
+      );
   }
 }

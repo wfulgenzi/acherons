@@ -21,7 +21,9 @@ const columns: TableColumn<OrgMemberRow>[] = [
         </div>
         <div>
           {row.name && (
-            <p className="font-medium text-gray-900 leading-tight">{row.name}</p>
+            <p className="font-medium text-gray-900 leading-tight">
+              {row.name}
+            </p>
           )}
           <p className="text-xs text-gray-500">{row.email}</p>
         </div>

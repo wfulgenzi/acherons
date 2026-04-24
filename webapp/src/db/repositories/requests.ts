@@ -34,7 +34,12 @@ export async function findOpenByDispatcher(tx: RLSDb, dispatcherOrgId: string) {
     })
     .from(requests)
     .leftJoin(user, eq(user.id, requests.createdByUserId))
-    .where(and(eq(requests.dispatcherOrgId, dispatcherOrgId), eq(requests.status, "open")))
+    .where(
+      and(
+        eq(requests.dispatcherOrgId, dispatcherOrgId),
+        eq(requests.status, "open"),
+      ),
+    )
     .orderBy(desc(requests.createdAt));
 }
 
@@ -57,15 +62,15 @@ export async function findAccessibleByClinic(tx: RLSDb, clinicOrgId: string) {
       requestClinicAccess,
       and(
         eq(requestClinicAccess.requestId, requests.id),
-        eq(requestClinicAccess.clinicOrgId, clinicOrgId)
-      )
+        eq(requestClinicAccess.clinicOrgId, clinicOrgId),
+      ),
     )
     .leftJoin(
       proposals,
       and(
         eq(proposals.requestId, requests.id),
-        eq(proposals.clinicOrgId, clinicOrgId)
-      )
+        eq(proposals.clinicOrgId, clinicOrgId),
+      ),
     )
     .leftJoin(user, eq(user.id, requests.createdByUserId))
     .where(eq(requests.status, "open"))
@@ -76,12 +81,14 @@ export async function findAccessibleByClinic(tx: RLSDb, clinicOrgId: string) {
 export async function findByIdForDispatcher(
   tx: RLSDb,
   id: string,
-  dispatcherOrgId: string
+  dispatcherOrgId: string,
 ) {
   const rows = await tx
     .select()
     .from(requests)
-    .where(and(eq(requests.id, id), eq(requests.dispatcherOrgId, dispatcherOrgId)))
+    .where(
+      and(eq(requests.id, id), eq(requests.dispatcherOrgId, dispatcherOrgId)),
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -107,14 +114,27 @@ export async function findCreator(tx: Tx, createdByUserId: string) {
 }
 
 export async function create(tx: RLSDb, data: NewRequest) {
-  const [row] = await tx.insert(requests).values({ ...data, status: "open" }).returning();
+  const [row] = await tx
+    .insert(requests)
+    .values({ ...data, status: "open" })
+    .returning();
   return row;
 }
 
-export async function updateCaseDescription(tx: RLSDb, id: string, caseDescription: string) {
-  await tx.update(requests).set({ caseDescription, updatedAt: new Date() }).where(eq(requests.id, id));
+export async function updateCaseDescription(
+  tx: RLSDb,
+  id: string,
+  caseDescription: string,
+) {
+  await tx
+    .update(requests)
+    .set({ caseDescription, updatedAt: new Date() })
+    .where(eq(requests.id, id));
 }
 
 export async function confirm(tx: RLSDb, id: string) {
-  await tx.update(requests).set({ status: "confirmed", updatedAt: new Date() }).where(eq(requests.id, id));
+  await tx
+    .update(requests)
+    .set({ status: "confirmed", updatedAt: new Date() })
+    .where(eq(requests.id, id));
 }

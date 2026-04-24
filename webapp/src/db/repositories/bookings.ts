@@ -55,7 +55,7 @@ export async function findByClinicInWindow(
   tx: RLSDb,
   clinicOrgId: string,
   from: Date,
-  to: Date
+  to: Date,
 ) {
   return tx
     .select({ booking: bookings, request: requests })
@@ -65,8 +65,8 @@ export async function findByClinicInWindow(
       and(
         eq(bookings.clinicOrgId, clinicOrgId),
         gte(bookings.confirmedStart, from),
-        lt(bookings.confirmedStart, to)
-      )
+        lt(bookings.confirmedStart, to),
+      ),
     )
     .orderBy(bookings.confirmedStart);
 }
@@ -76,7 +76,7 @@ export async function countByClinicInWindow(
   tx: RLSDb,
   clinicOrgId: string,
   from: Date,
-  to: Date
+  to: Date,
 ) {
   const [row] = await tx
     .select({ total: count() })
@@ -85,8 +85,8 @@ export async function countByClinicInWindow(
       and(
         eq(bookings.clinicOrgId, clinicOrgId),
         gte(bookings.confirmedStart, from),
-        lt(bookings.confirmedStart, to)
-      )
+        lt(bookings.confirmedStart, to),
+      ),
     );
   return row?.total ?? 0;
 }
@@ -96,7 +96,7 @@ export async function countByDispatcherInWindow(
   tx: RLSDb,
   dispatcherOrgId: string,
   from: Date,
-  to: Date
+  to: Date,
 ) {
   const [row] = await tx
     .select({ total: count() })
@@ -105,18 +105,27 @@ export async function countByDispatcherInWindow(
       and(
         eq(bookings.dispatcherOrgId, dispatcherOrgId),
         gte(bookings.confirmedStart, from),
-        lt(bookings.confirmedStart, to)
-      )
+        lt(bookings.confirmedStart, to),
+      ),
     );
   return row?.total ?? 0;
 }
 
 /** Dispatcher dashboard: count of all upcoming bookings (pipeline). */
-export async function countUpcomingByDispatcher(tx: RLSDb, dispatcherOrgId: string, from: Date) {
+export async function countUpcomingByDispatcher(
+  tx: RLSDb,
+  dispatcherOrgId: string,
+  from: Date,
+) {
   const [row] = await tx
     .select({ total: count() })
     .from(bookings)
-    .where(and(eq(bookings.dispatcherOrgId, dispatcherOrgId), gte(bookings.confirmedStart, from)));
+    .where(
+      and(
+        eq(bookings.dispatcherOrgId, dispatcherOrgId),
+        gte(bookings.confirmedStart, from),
+      ),
+    );
   return row?.total ?? 0;
 }
 

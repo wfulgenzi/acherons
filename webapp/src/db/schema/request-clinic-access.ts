@@ -25,5 +25,5 @@ export const requestClinicAccess = pgTable(
 
     grantedAt: timestamp("granted_at").notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.requestId, t.clinicOrgId] })]
+  (t) => [primaryKey({ columns: [t.requestId, t.clinicOrgId] })],
 );

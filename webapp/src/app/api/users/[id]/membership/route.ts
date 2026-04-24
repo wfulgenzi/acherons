@@ -19,11 +19,17 @@ const AssignSchema = v.object({
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const { id: userId } = await params;
 
-  const targetUser = await adminDb.select().from(user).where(eq(user.id, userId)).limit(1);
+  const targetUser = await adminDb
+    .select()
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
   if (!targetUser[0]) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
@@ -31,13 +37,19 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const body = await request.json().catch(() => null);
   const parsed = v.safeParse(AssignSchema, body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 },
+    );
   }
   const { orgId, role } = parsed.output;
 
   const org = await orgsRepo.findById(adminDb, orgId);
   if (!org) {
-    return NextResponse.json({ error: "Organisation not found." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Organisation not found." },
+      { status: 404 },
+    );
   }
 
   await membershipsRepo.upsertForUser(adminDb, userId, orgId, role);
@@ -51,13 +63,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const { id: userId } = await params;
 
   const deleted = await membershipsRepo.deleteByUserId(adminDb, userId);
   if (!deleted) {
-    return NextResponse.json({ error: "No membership found." }, { status: 404 });
+    return NextResponse.json(
+      { error: "No membership found." },
+      { status: 404 },
+    );
   }
 
   return new NextResponse(null, { status: 204 });

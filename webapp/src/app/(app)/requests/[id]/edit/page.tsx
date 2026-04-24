@@ -10,10 +10,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export default async function EditRequestPage({ params }: RouteContext) {
   const { id } = await params;
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
   const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
+  if (!membership || membership.orgType !== "dispatch") {
+    redirect("/dashboard");
+  }
 
   const [req, allClinicRows, selectedClinicIds] = await withRLS(
     { userId: session.user.id, orgId: membership.orgId },
@@ -22,11 +26,15 @@ export default async function EditRequestPage({ params }: RouteContext) {
         requestsRepo.findByIdForDispatcher(tx, id, membership.orgId),
         orgsRepo.findAllClinics(tx),
         rcaRepo.findClinicIdsByRequestId(tx, id),
-      ])
+      ]),
   );
 
-  if (!req) notFound();
-  if (req.status !== "open") redirect(`/requests/${id}`);
+  if (!req) {
+    notFound();
+  }
+  if (req.status !== "open") {
+    redirect(`/requests/${id}`);
+  }
 
   const clinics: EditClinicItem[] = allClinicRows.map((r) => ({
     id: r.id,

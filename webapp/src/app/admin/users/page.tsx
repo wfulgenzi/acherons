@@ -8,7 +8,9 @@ import { UsersTable, type UserRow } from "./UsersTable";
 
 export default async function UsersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user.isAdmin) redirect("/dashboard");
+  if (!session?.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   const rows = await adminDb
     .select()

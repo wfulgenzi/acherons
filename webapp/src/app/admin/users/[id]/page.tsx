@@ -6,7 +6,11 @@ import { auth } from "@/lib/auth";
 import { adminDb } from "@/db";
 import { user, memberships, organisations } from "@/db/schema";
 import { orgsRepo } from "@/db/repositories";
-import { MembershipManager, type CurrentMembership, type OrgOption } from "./MembershipManager";
+import {
+  MembershipManager,
+  type CurrentMembership,
+  type OrgOption,
+} from "./MembershipManager";
 import { Badge } from "@/components/ui/Badge";
 
 type Props = { params: Promise<{ id: string }> };
@@ -15,7 +19,9 @@ export default async function UserDetailPage({ params }: Props) {
   const { id } = await params;
 
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user.isAdmin) redirect("/dashboard");
+  if (!session?.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   const [userRows, membershipRows, allOrgs] = await Promise.all([
     adminDb.select().from(user).where(eq(user.id, id)).limit(1),
@@ -29,7 +35,9 @@ export default async function UserDetailPage({ params }: Props) {
   ]);
 
   const u = userRows[0];
-  if (!u) notFound();
+  if (!u) {
+    notFound();
+  }
 
   const membershipRow = membershipRows[0] ?? null;
   const membership: CurrentMembership | null = membershipRow?.organisations
@@ -64,12 +72,12 @@ export default async function UserDetailPage({ params }: Props) {
             <h1 className="text-2xl font-bold text-gray-900 leading-tight">
               {u.name ?? u.email}
             </h1>
-            {u.name && (
-              <p className="text-sm text-gray-500">{u.email}</p>
-            )}
+            {u.name && <p className="text-sm text-gray-500">{u.email}</p>}
           </div>
           {u.isAdmin && (
-            <Badge variant="brand" className="ml-1">Admin</Badge>
+            <Badge variant="brand" className="ml-1">
+              Admin
+            </Badge>
           )}
         </div>
       </div>
@@ -91,7 +99,9 @@ export default async function UserDetailPage({ params }: Props) {
 
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-900">Organisation</h2>
+            <h2 className="text-sm font-semibold text-gray-900">
+              Organisation
+            </h2>
           </div>
           <div className="px-5 py-4">
             <MembershipManager
@@ -106,7 +116,13 @@ export default async function UserDetailPage({ params }: Props) {
   );
 }
 
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+function InfoCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="px-5 py-3.5 border-b border-gray-100">
@@ -117,7 +133,13 @@ function InfoCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
   return (
     <div className="flex px-5 py-3.5 gap-4">
       <dt className="text-sm text-gray-500 w-28 shrink-0">{label}</dt>

@@ -23,6 +23,8 @@ export function OrgProvider({
 
 export function useOrg(): OrgContextValue {
   const ctx = useContext(OrgContext);
-  if (!ctx) throw new Error("useOrg must be used within OrgProvider");
+  if (!ctx) {
+    throw new Error("useOrg must be used within OrgProvider");
+  }
   return ctx;
 }

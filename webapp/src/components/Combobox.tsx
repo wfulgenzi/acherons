@@ -31,7 +31,7 @@ export function Combobox({
   const selected = options.find((o) => o.id === value) ?? null;
 
   const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(search.toLowerCase())
+    o.label.toLowerCase().includes(search.toLowerCase()),
   );
 
   // Close on outside click
@@ -51,7 +51,9 @@ export function Combobox({
 
   // Focus search input when dropdown opens
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 0);
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
   }, [open]);
 
   function handleSelect(id: string) {
@@ -190,7 +192,16 @@ function SearchIcon() {
 
 function ClearIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>

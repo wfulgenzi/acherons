@@ -9,8 +9,12 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
-  if (!session.user.isAdmin) redirect("/dashboard");
+  if (!session) {
+    redirect("/login");
+  }
+  if (!session.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   return (
     <div className="flex min-h-screen bg-brand-100">

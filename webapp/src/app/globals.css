@@ -2,14 +2,16 @@
 
 @theme inline {
   /* ── Brand palette ──────────────────────────────────────────────────────── */
-  --color-brand-50:  oklch(0.99  0.008 90);   /* warm cream — main bg          */
-  --color-brand-100: oklch(0.974 0.012 90);   /* slightly darker — surfaces    */
-  --color-brand-200: oklch(0.89  0.018 120);  /* green-tinted borders          */
-  --color-brand-300: oklch(0.78  0.018 120);  /* dividers, disabled            */
-  --color-brand-500: oklch(0.5   0.02  140);  /* muted / secondary text        */
-  --color-brand-600: oklch(0.55  0.055 145);  /* active nav, accent badges     */
-  --color-brand-vivid: oklch(0.52 0.17  145); /* bright vivid green — nav hover */
-  --color-brand-800: oklch(0.28  0.025 145);  /* dark charcoal — primary text  */
+  --color-brand-50: oklch(0.99 0.008 90); /* warm cream — main bg          */
+  --color-brand-100: oklch(0.974 0.012 90); /* slightly darker — surfaces    */
+  --color-brand-200: oklch(0.89 0.018 120); /* green-tinted borders          */
+  --color-brand-300: oklch(0.78 0.018 120); /* dividers, disabled            */
+  --color-brand-500: oklch(0.5 0.02 140); /* muted / secondary text        */
+  --color-brand-600: oklch(0.55 0.055 145); /* active nav, accent badges     */
+  --color-brand-vivid: oklch(
+    0.52 0.17 145
+  ); /* bright vivid green — nav hover */
+  --color-brand-800: oklch(0.28 0.025 145); /* dark charcoal — primary text  */
   /* Table header tint — soft green-warm wash at 40% alpha */
   --color-brand-header: oklab(0.92 -0.0176777 0.0176777 / 0.4);
 
@@ -19,21 +21,21 @@
    * text-gray-*, bg-gray-*, border-gray-* automatically inherits the
    * warm brand palette. No per-file changes needed for new pages.
    */
-  --color-gray-50:  oklch(0.99  0.008 90);
+  --color-gray-50: oklch(0.99 0.008 90);
   --color-gray-100: oklch(0.974 0.012 90);
-  --color-gray-200: oklch(0.89  0.018 120);
-  --color-gray-300: oklch(0.78  0.018 120);
-  --color-gray-400: oklch(0.65  0.016 130);
-  --color-gray-500: oklch(0.5   0.02  140);
-  --color-gray-600: oklch(0.42  0.022 142);
-  --color-gray-700: oklch(0.38  0.024 143);
-  --color-gray-800: oklch(0.33  0.025 144);
-  --color-gray-900: oklch(0.28  0.025 145);
+  --color-gray-200: oklch(0.89 0.018 120);
+  --color-gray-300: oklch(0.78 0.018 120);
+  --color-gray-400: oklch(0.65 0.016 130);
+  --color-gray-500: oklch(0.5 0.02 140);
+  --color-gray-600: oklch(0.42 0.022 142);
+  --color-gray-700: oklch(0.38 0.024 143);
+  --color-gray-800: oklch(0.33 0.025 144);
+  --color-gray-900: oklch(0.28 0.025 145);
 
   /* ── Typography ─────────────────────────────────────────────────────────── */
-  --font-sans:    var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sora),    ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --font-weight-bold: 600;
 }
@@ -44,6 +46,11 @@ body {
   font-family: var(--font-sans);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
 }

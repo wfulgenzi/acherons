@@ -25,7 +25,8 @@ const columns: TableColumn<RequestRow>[] = [
           REQ-{row.shortId}
         </p>
         <p className="text-sm font-bold text-brand-800 mt-1 leading-none">
-          {genderInitial(row.patientGender)} · {row.patientAge != null ? `${row.patientAge}y` : "?"}
+          {genderInitial(row.patientGender)} ·{" "}
+          {row.patientAge != null ? `${row.patientAge}y` : "?"}
         </p>
       </div>
     ),
@@ -40,7 +41,9 @@ const columns: TableColumn<RequestRow>[] = [
         </p>
         <p className="text-xs text-gray-400 mt-1">
           Postcode {row.postcode}
-          {row.creatorLabel ? ` · via ${firstNameInitial(row.creatorLabel)}` : ""}
+          {row.creatorLabel
+            ? ` · via ${firstNameInitial(row.creatorLabel)}`
+            : ""}
         </p>
       </div>
     ),
@@ -52,9 +55,16 @@ const columns: TableColumn<RequestRow>[] = [
       const d = new Date(row.createdAt);
       return (
         <span className="text-xs text-gray-500">
-          {d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+          {d.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          })}
           {", "}
-          {d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+          {d.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </span>
       );
     },
@@ -63,7 +73,9 @@ const columns: TableColumn<RequestRow>[] = [
     key: "clinics",
     label: "Clinics",
     render: (row) => (
-      <span className="text-sm font-medium text-gray-700">{row.clinicsContacted}</span>
+      <span className="text-sm font-medium text-gray-700">
+        {row.clinicsContacted}
+      </span>
     ),
   },
   {
@@ -117,7 +129,16 @@ function firstNameInitial(name: string) {
 
 function ChevronIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="9 18 15 12 9 6" />
     </svg>
   );

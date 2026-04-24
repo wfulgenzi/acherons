@@ -9,14 +9,18 @@ import { ClinicsTable, type ClinicRow } from "./ClinicsTable";
 
 export default async function ClinicsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user.isAdmin) redirect("/dashboard");
+  if (!session?.user.isAdmin) {
+    redirect("/dashboard");
+  }
 
   const [rows, memberCounts] = await Promise.all([
     orgsRepo.findAllByType(adminDb, "clinic"),
     membershipsRepo.memberCountsByOrg(adminDb),
   ]);
 
-  const countMap = Object.fromEntries(memberCounts.map((r) => [r.orgId, r.count]));
+  const countMap = Object.fromEntries(
+    memberCounts.map((r) => [r.orgId, r.count]),
+  );
 
   const data: ClinicRow[] = rows.map((r) => ({
     id: r.organisations.id,

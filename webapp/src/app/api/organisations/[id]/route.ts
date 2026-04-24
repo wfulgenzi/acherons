@@ -16,10 +16,15 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
   const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
-    return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Organisation not found" },
+      { status: 404 },
+    );
   }
 
-  return NextResponse.json(orgsRepo.formatOrg(row.organisations, row.clinic_profiles));
+  return NextResponse.json(
+    orgsRepo.formatOrg(row.organisations, row.clinic_profiles),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -28,13 +33,18 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const { id } = await params;
   const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
-    return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Organisation not found" },
+      { status: 404 },
+    );
   }
 
   const body = await request.json().catch(() => null);
@@ -46,12 +56,22 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (!result.success) {
     return NextResponse.json(
       { error: "Validation failed", issues: v.flatten(result.issues) },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const { name, type, address, latitude, longitude, phone, website, mapsUrl, specialisations, openingHours } =
-    result.output;
+  const {
+    name,
+    type,
+    address,
+    latitude,
+    longitude,
+    phone,
+    website,
+    mapsUrl,
+    specialisations,
+    openingHours,
+  } = result.output;
 
   const resolvedType = type ?? row.organisations.type;
   const prevType = row.organisations.type;
@@ -64,16 +84,21 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   let updatedProfile = null;
 
   if (resolvedType === "clinic") {
-    updatedProfile = await orgsRepo.upsertClinicProfile(adminDb, id, !!row.clinic_profiles, {
-      ...(address !== undefined && { address }),
-      ...(latitude !== undefined && { latitude }),
-      ...(longitude !== undefined && { longitude }),
-      ...(phone !== undefined && { phone }),
-      ...(website !== undefined && { website }),
-      ...(mapsUrl !== undefined && { mapsUrl }),
-      ...(specialisations !== undefined && { specialisations }),
-      ...(openingHours !== undefined && { openingHours }),
-    });
+    updatedProfile = await orgsRepo.upsertClinicProfile(
+      adminDb,
+      id,
+      !!row.clinic_profiles,
+      {
+        ...(address !== undefined && { address }),
+        ...(latitude !== undefined && { latitude }),
+        ...(longitude !== undefined && { longitude }),
+        ...(phone !== undefined && { phone }),
+        ...(website !== undefined && { website }),
+        ...(mapsUrl !== undefined && { mapsUrl }),
+        ...(specialisations !== undefined && { specialisations }),
+        ...(openingHours !== undefined && { openingHours }),
+      },
+    );
   } else if (resolvedType === "dispatch" && prevType === "clinic") {
     await orgsRepo.deleteClinicProfile(adminDb, id);
   }
@@ -87,13 +112,18 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   const auth = await requireAdmin();
-  if (isApiError(auth)) return auth.error;
+  if (isApiError(auth)) {
+    return auth.error;
+  }
 
   const { id } = await params;
   const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
-    return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Organisation not found" },
+      { status: 404 },
+    );
   }
 
   await orgsRepo.deleteById(adminDb, id);

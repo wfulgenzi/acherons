@@ -24,7 +24,8 @@ const columns: TableColumn<ProposalRow>[] = [
           REQ-{row.requestShortId}
         </p>
         <p className="text-sm font-bold text-brand-800 mt-1 leading-none">
-          {genderInitial(row.patientGender)} · {row.patientAge != null ? `${row.patientAge}y` : "?"}
+          {genderInitial(row.patientGender)} ·{" "}
+          {row.patientAge != null ? `${row.patientAge}y` : "?"}
         </p>
       </div>
     ),
