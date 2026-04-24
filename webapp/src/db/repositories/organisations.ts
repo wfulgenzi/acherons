@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import type { Tx } from "../rls";
+import type { Tx, RLSDb } from "../rls";
 import { organisations, clinicProfiles } from "../schema";
 import type { OpeningHours } from "../schema";
 
@@ -89,7 +89,7 @@ export async function findAllByType(tx: Tx, type: "dispatch" | "clinic") {
 }
 
 /** List all clinic orgs with their profiles — used for the request creation flow. */
-export async function findAllClinics(tx: Tx) {
+export async function findAllClinics(tx: RLSDb) {
   return tx
     .select({
       id: organisations.id,

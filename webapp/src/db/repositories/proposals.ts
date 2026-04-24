@@ -1,5 +1,5 @@
 import { eq, and, desc } from "drizzle-orm";
-import type { Tx } from "../rls";
+import type { RLSDb } from "../rls";
 import { proposals, requests, organisations } from "../schema";
 import type { ProposedTimeslots } from "../schema";
 
@@ -13,7 +13,7 @@ export type NewProposal = {
 };
 
 /** Clinic: list all proposals submitted by this clinic, with request info. */
-export async function findByClinic(tx: Tx, clinicOrgId: string) {
+export async function findByClinic(tx: RLSDb, clinicOrgId: string) {
   return tx
     .select({
       id: proposals.id,
@@ -32,7 +32,7 @@ export async function findByClinic(tx: Tx, clinicOrgId: string) {
 }
 
 /** Dispatcher: list all proposals for their requests, with clinic name + request info. */
-export async function findByDispatcher(tx: Tx, dispatcherOrgId: string) {
+export async function findByDispatcher(tx: RLSDb, dispatcherOrgId: string) {
   const clinicOrg = organisations;
   return tx
     .select({
@@ -54,7 +54,7 @@ export async function findByDispatcher(tx: Tx, dispatcherOrgId: string) {
 }
 
 /** Dispatcher dashboard: pending proposals needing review, with clinic + request info. */
-export async function findPendingByDispatcher(tx: Tx, dispatcherOrgId: string, limitN = 6) {
+export async function findPendingByDispatcher(tx: RLSDb, dispatcherOrgId: string, limitN = 6) {
   return tx
     .select({
       proposal: proposals,
@@ -70,7 +70,7 @@ export async function findPendingByDispatcher(tx: Tx, dispatcherOrgId: string, l
 }
 
 /** Dispatcher detail page: proposals on a specific request with clinic name. */
-export async function findByRequestId(tx: Tx, requestId: string) {
+export async function findByRequestId(tx: RLSDb, requestId: string) {
   return tx
     .select({
       proposal: proposals,
@@ -83,7 +83,7 @@ export async function findByRequestId(tx: Tx, requestId: string) {
 }
 
 /** Clinic: recent proposals with request info (for clinic dashboard). */
-export async function findRecentByClinic(tx: Tx, clinicOrgId: string, limitN = 5) {
+export async function findRecentByClinic(tx: RLSDb, clinicOrgId: string, limitN = 5) {
   return tx
     .select({ proposal: proposals, request: requests })
     .from(proposals)
@@ -95,7 +95,7 @@ export async function findRecentByClinic(tx: Tx, clinicOrgId: string, limitN = 5
 
 /** Check if a clinic already has a proposal for a request (dedup guard). */
 export async function findByRequestAndClinic(
-  tx: Tx,
+  tx: RLSDb,
   requestId: string,
   clinicOrgId: string
 ) {
@@ -108,12 +108,12 @@ export async function findByRequestAndClinic(
 }
 
 /** Fetch a single proposal by id. */
-export async function findById(tx: Tx, id: string) {
+export async function findById(tx: RLSDb, id: string) {
   const rows = await tx.select().from(proposals).where(eq(proposals.id, id)).limit(1);
   return rows[0] ?? null;
 }
 
-export async function create(tx: Tx, data: NewProposal) {
+export async function create(tx: RLSDb, data: NewProposal) {
   const [row] = await tx
     .insert(proposals)
     .values({ ...data, status: "pending" })
@@ -121,14 +121,14 @@ export async function create(tx: Tx, data: NewProposal) {
   return row;
 }
 
-export async function refuse(tx: Tx, id: string) {
+export async function refuse(tx: RLSDb, id: string) {
   await tx
     .update(proposals)
     .set({ status: "rejected", updatedAt: new Date() })
     .where(eq(proposals.id, id));
 }
 
-export async function accept(tx: Tx, id: string) {
+export async function accept(tx: RLSDb, id: string) {
   await tx
     .update(proposals)
     .set({ status: "accepted", updatedAt: new Date() })

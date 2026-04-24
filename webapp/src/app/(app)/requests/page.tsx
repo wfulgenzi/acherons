@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { withRLS } from "@/db/rls";
+import { withRLS, withUserContext } from "@/db/rls";
 import { membershipsRepo, requestsRepo } from "@/db/repositories";
 import {
   DispatcherRequestsView,
@@ -17,7 +16,9 @@ export default async function RequestsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const membership = await membershipsRepo.findByUserId(db, session.user.id);
+  const membership = await withUserContext(session.user.id, (tx) =>
+    membershipsRepo.findByUserId(tx, session.user.id)
+  );
   if (!membership) redirect("/onboarding");
 
   if (membership.orgType === "clinic") {

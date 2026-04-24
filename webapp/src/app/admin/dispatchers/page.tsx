@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { orgsRepo, membershipsRepo } from "@/db/repositories";
 import { DispatchersTable, type DispatcherRow } from "./DispatchersTable";
 
@@ -12,8 +12,8 @@ export default async function DispatchersPage() {
   if (!session?.user.isAdmin) redirect("/dashboard");
 
   const [rows, memberCounts] = await Promise.all([
-    orgsRepo.findAllByType(db, "dispatch"),
-    membershipsRepo.memberCountsByOrg(db),
+    orgsRepo.findAllByType(adminDb, "dispatch"),
+    membershipsRepo.memberCountsByOrg(adminDb),
   ]);
 
   const countMap = Object.fromEntries(memberCounts.map((r) => [r.orgId, r.count]));

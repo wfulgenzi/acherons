@@ -1,5 +1,5 @@
 import { eq, and, desc, sql } from "drizzle-orm";
-import type { Tx } from "../rls";
+import type { Tx, RLSDb } from "../rls";
 import { requests, requestClinicAccess, proposals, user } from "../schema";
 
 export type NewRequest = {
@@ -12,7 +12,7 @@ export type NewRequest = {
 };
 
 /** Dispatcher: list open requests for their org with clinic + proposal counts. */
-export async function findOpenByDispatcher(tx: Tx, dispatcherOrgId: string) {
+export async function findOpenByDispatcher(tx: RLSDb, dispatcherOrgId: string) {
   return tx
     .select({
       id: requests.id,
@@ -39,7 +39,7 @@ export async function findOpenByDispatcher(tx: Tx, dispatcherOrgId: string) {
 }
 
 /** Clinic: list open requests the clinic has been granted access to, with proposal status. */
-export async function findAccessibleByClinic(tx: Tx, clinicOrgId: string) {
+export async function findAccessibleByClinic(tx: RLSDb, clinicOrgId: string) {
   return tx
     .select({
       id: requests.id,
@@ -74,7 +74,7 @@ export async function findAccessibleByClinic(tx: Tx, clinicOrgId: string) {
 
 /** Dispatcher: fetch a single request, scoped to their org. */
 export async function findByIdForDispatcher(
-  tx: Tx,
+  tx: RLSDb,
   id: string,
   dispatcherOrgId: string
 ) {
@@ -87,7 +87,7 @@ export async function findByIdForDispatcher(
 }
 
 /** Fetch a request by id (for validation in clinic API routes). */
-export async function findOpenById(tx: Tx, id: string) {
+export async function findOpenById(tx: RLSDb, id: string) {
   const rows = await tx
     .select()
     .from(requests)
@@ -106,15 +106,15 @@ export async function findCreator(tx: Tx, createdByUserId: string) {
   return rows[0] ?? null;
 }
 
-export async function create(tx: Tx, data: NewRequest) {
+export async function create(tx: RLSDb, data: NewRequest) {
   const [row] = await tx.insert(requests).values({ ...data, status: "open" }).returning();
   return row;
 }
 
-export async function updateCaseDescription(tx: Tx, id: string, caseDescription: string) {
+export async function updateCaseDescription(tx: RLSDb, id: string, caseDescription: string) {
   await tx.update(requests).set({ caseDescription, updatedAt: new Date() }).where(eq(requests.id, id));
 }
 
-export async function confirm(tx: Tx, id: string) {
+export async function confirm(tx: RLSDb, id: string) {
   await tx.update(requests).set({ status: "confirmed", updatedAt: new Date() }).where(eq(requests.id, id));
 }

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { orgsRepo, membershipsRepo } from "@/db/repositories";
 import { OrgMembersTable, type OrgMemberRow } from "@/components/OrgMembersTable";
 
@@ -15,8 +15,8 @@ export default async function ClinicDetailPage({ params }: Props) {
   if (!session?.user.isAdmin) redirect("/dashboard");
 
   const [row, memberRows] = await Promise.all([
-    orgsRepo.findById(db, id),
-    membershipsRepo.findByOrgId(db, id),
+    orgsRepo.findById(adminDb, id),
+    membershipsRepo.findByOrgId(adminDb, id),
   ]);
 
   if (!row || row.organisations.type !== "clinic") notFound();

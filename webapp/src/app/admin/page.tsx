@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { count, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { user, organisations } from "@/db/schema";
 
 export default async function AdminDashboardPage() {
@@ -11,9 +11,9 @@ export default async function AdminDashboardPage() {
 
   const [[{ total: userCount }], [{ total: clinicCount }], [{ total: dispatcherCount }]] =
     await Promise.all([
-      db.select({ total: count() }).from(user),
-      db.select({ total: count() }).from(organisations).where(eq(organisations.type, "clinic")),
-      db.select({ total: count() }).from(organisations).where(eq(organisations.type, "dispatch")),
+      adminDb.select({ total: count() }).from(user),
+      adminDb.select({ total: count() }).from(organisations).where(eq(organisations.type, "clinic")),
+      adminDb.select({ total: count() }).from(organisations).where(eq(organisations.type, "dispatch")),
     ]);
 
   return (

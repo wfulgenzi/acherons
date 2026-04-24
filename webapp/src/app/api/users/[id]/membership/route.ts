@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { user } from "@/db/schema";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { membershipsRepo, orgsRepo } from "@/db/repositories";
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const { id: userId } = await params;
 
-  const targetUser = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+  const targetUser = await adminDb.select().from(user).where(eq(user.id, userId)).limit(1);
   if (!targetUser[0]) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
@@ -35,12 +35,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
   const { orgId, role } = parsed.output;
 
-  const org = await orgsRepo.findById(db, orgId);
+  const org = await orgsRepo.findById(adminDb, orgId);
   if (!org) {
     return NextResponse.json({ error: "Organisation not found." }, { status: 404 });
   }
 
-  await membershipsRepo.upsertForUser(db, userId, orgId, role);
+  await membershipsRepo.upsertForUser(adminDb, userId, orgId, role);
 
   return NextResponse.json({ ok: true });
 }
@@ -55,7 +55,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
 
   const { id: userId } = await params;
 
-  const deleted = await membershipsRepo.deleteByUserId(db, userId);
+  const deleted = await membershipsRepo.deleteByUserId(adminDb, userId);
   if (!deleted) {
     return NextResponse.json({ error: "No membership found." }, { status: 404 });
   }

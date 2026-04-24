@@ -1,5 +1,5 @@
 import { eq, and, gte, lt, count } from "drizzle-orm";
-import type { Tx } from "../rls";
+import type { RLSDb } from "../rls";
 import { bookings, requests, organisations } from "../schema";
 
 export type NewBooking = {
@@ -12,7 +12,7 @@ export type NewBooking = {
 };
 
 /** Clinic: all bookings for their org with request info, ordered by start time. */
-export async function findByClinic(tx: Tx, clinicOrgId: string) {
+export async function findByClinic(tx: RLSDb, clinicOrgId: string) {
   return tx
     .select({
       id: bookings.id,
@@ -30,7 +30,7 @@ export async function findByClinic(tx: Tx, clinicOrgId: string) {
 }
 
 /** Dispatcher: all bookings for their org with clinic name + request info, ordered by start time. */
-export async function findByDispatcher(tx: Tx, dispatcherOrgId: string) {
+export async function findByDispatcher(tx: RLSDb, dispatcherOrgId: string) {
   const clinicOrg = organisations;
   return tx
     .select({
@@ -52,7 +52,7 @@ export async function findByDispatcher(tx: Tx, dispatcherOrgId: string) {
 
 /** Clinic dashboard: bookings in a time window with request info. */
 export async function findByClinicInWindow(
-  tx: Tx,
+  tx: RLSDb,
   clinicOrgId: string,
   from: Date,
   to: Date
@@ -73,7 +73,7 @@ export async function findByClinicInWindow(
 
 /** Clinic dashboard: count of past bookings in a window (completed count). */
 export async function countByClinicInWindow(
-  tx: Tx,
+  tx: RLSDb,
   clinicOrgId: string,
   from: Date,
   to: Date
@@ -93,7 +93,7 @@ export async function countByClinicInWindow(
 
 /** Dispatcher dashboard: count of bookings in a time window. */
 export async function countByDispatcherInWindow(
-  tx: Tx,
+  tx: RLSDb,
   dispatcherOrgId: string,
   from: Date,
   to: Date
@@ -112,7 +112,7 @@ export async function countByDispatcherInWindow(
 }
 
 /** Dispatcher dashboard: count of all upcoming bookings (pipeline). */
-export async function countUpcomingByDispatcher(tx: Tx, dispatcherOrgId: string, from: Date) {
+export async function countUpcomingByDispatcher(tx: RLSDb, dispatcherOrgId: string, from: Date) {
   const [row] = await tx
     .select({ total: count() })
     .from(bookings)
@@ -120,7 +120,7 @@ export async function countUpcomingByDispatcher(tx: Tx, dispatcherOrgId: string,
   return row?.total ?? 0;
 }
 
-export async function create(tx: Tx, data: NewBooking) {
+export async function create(tx: RLSDb, data: NewBooking) {
   const [row] = await tx.insert(bookings).values(data).returning();
   return row;
 }

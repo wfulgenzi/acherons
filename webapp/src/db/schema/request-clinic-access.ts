@@ -19,6 +19,10 @@ export const requestClinicAccess = pgTable(
       .notNull()
       .references(() => organisations.id, { onDelete: "cascade" }),
 
+    dispatcherOrgId: uuid("dispatcher_org_id")
+      .notNull()
+      .references(() => organisations.id, { onDelete: "cascade" }),
+
     grantedAt: timestamp("granted_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.requestId, t.clinicOrgId] })]

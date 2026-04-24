@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { user, memberships, organisations } from "@/db/schema";
 import { orgsRepo } from "@/db/repositories";
 import { MembershipManager, type CurrentMembership, type OrgOption } from "./MembershipManager";
@@ -18,14 +18,14 @@ export default async function UserDetailPage({ params }: Props) {
   if (!session?.user.isAdmin) redirect("/dashboard");
 
   const [userRows, membershipRows, allOrgs] = await Promise.all([
-    db.select().from(user).where(eq(user.id, id)).limit(1),
-    db
+    adminDb.select().from(user).where(eq(user.id, id)).limit(1),
+    adminDb
       .select()
       .from(memberships)
       .leftJoin(organisations, eq(organisations.id, memberships.orgId))
       .where(eq(memberships.userId, id))
       .limit(1),
-    orgsRepo.findAllSummary(db),
+    orgsRepo.findAllSummary(adminDb),
   ]);
 
   const u = userRows[0];

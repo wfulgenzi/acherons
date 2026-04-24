@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
 import { membershipsRepo } from "@/db/repositories";
+import { withUserContext } from "@/db/rls";
 import { ClinicDashboard } from "./_clinic/ClinicDashboard";
 import { DispatcherDashboard } from "./_dispatcher/DispatcherDashboard";
 
@@ -10,7 +10,9 @@ export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const row = await membershipsRepo.findByUserIdWithOrg(db, session.user.id);
+  const row = await withUserContext(session.user.id, (tx) =>
+    membershipsRepo.findByUserIdWithOrg(tx, session.user.id)
+  );
   if (!row) redirect("/onboarding");
 
   const { organisations: org } = row;

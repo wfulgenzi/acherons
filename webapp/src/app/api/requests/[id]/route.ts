@@ -2,8 +2,7 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { withRLS } from "@/db/rls";
+import { withRLS, withUserContext } from "@/db/rls";
 import { membershipsRepo, requestsRepo, rcaRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -21,7 +20,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const membership = await membershipsRepo.findByUserId(db, session.user.id);
+  const membership = await withUserContext(session.user.id, (tx) =>
+    membershipsRepo.findByUserId(tx, session.user.id)
+  );
   if (!membership || membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -48,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         await requestsRepo.updateCaseDescription(tx, id, caseDescription);
       }
       if (clinicIds !== undefined) {
-        await rcaRepo.replaceAll(tx, id, clinicIds);
+        await rcaRepo.replaceAll(tx, id, membership.orgId, clinicIds);
       }
       return true;
     }

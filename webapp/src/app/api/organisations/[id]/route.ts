@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { UpdateOrganisationSchema } from "@/lib/schemas/organisations";
 import { orgsRepo } from "@/db/repositories";
@@ -13,7 +13,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const { id } = await params;
-  const row = await orgsRepo.findById(db, id);
+  const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
@@ -31,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (isApiError(auth)) return auth.error;
 
   const { id } = await params;
-  const row = await orgsRepo.findById(db, id);
+  const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const resolvedType = type ?? row.organisations.type;
   const prevType = row.organisations.type;
 
-  const updatedOrg = await orgsRepo.update(db, id, {
+  const updatedOrg = await orgsRepo.update(adminDb, id, {
     ...(name !== undefined && { name: name.trim() }),
     ...(type !== undefined && { type }),
   });
@@ -64,7 +64,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   let updatedProfile = null;
 
   if (resolvedType === "clinic") {
-    updatedProfile = await orgsRepo.upsertClinicProfile(db, id, !!row.clinic_profiles, {
+    updatedProfile = await orgsRepo.upsertClinicProfile(adminDb, id, !!row.clinic_profiles, {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       ...(openingHours !== undefined && { openingHours }),
     });
   } else if (resolvedType === "dispatch" && prevType === "clinic") {
-    await orgsRepo.deleteClinicProfile(db, id);
+    await orgsRepo.deleteClinicProfile(adminDb, id);
   }
 
   return NextResponse.json(orgsRepo.formatOrg(updatedOrg, updatedProfile));
@@ -90,13 +90,13 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   if (isApiError(auth)) return auth.error;
 
   const { id } = await params;
-  const row = await orgsRepo.findById(db, id);
+  const row = await orgsRepo.findById(adminDb, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
   }
 
-  await orgsRepo.deleteById(db, id);
+  await orgsRepo.deleteById(adminDb, id);
 
   return new NextResponse(null, { status: 204 });
 }

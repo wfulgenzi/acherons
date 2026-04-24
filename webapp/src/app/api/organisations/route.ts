@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { CreateOrganisationSchema } from "@/lib/schemas/organisations";
 import { orgsRepo } from "@/db/repositories";
@@ -10,7 +10,7 @@ import { orgsRepo } from "@/db/repositories";
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  const rows = await orgsRepo.findAll(db);
+  const rows = await orgsRepo.findAll(adminDb);
   return NextResponse.json(rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)));
 }
 
@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
   const { name, type, address, latitude, longitude, phone, website, mapsUrl, specialisations, openingHours } =
     result.output;
 
-  const org = await orgsRepo.create(db, name.trim(), type);
+  const org = await orgsRepo.create(adminDb, name.trim(), type);
 
   let profile = null;
   if (type === "clinic") {
-    profile = await orgsRepo.upsertClinicProfile(db, org.id, false, {
+    profile = await orgsRepo.upsertClinicProfile(adminDb, org.id, false, {
       address: address ?? null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { adminDb } from "@/db";
 import { user, memberships, organisations } from "@/db/schema";
 import { UsersTable, type UserRow } from "./UsersTable";
 
@@ -10,7 +10,7 @@ export default async function UsersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user.isAdmin) redirect("/dashboard");
 
-  const rows = await db
+  const rows = await adminDb
     .select()
     .from(user)
     .leftJoin(memberships, eq(memberships.userId, user.id))

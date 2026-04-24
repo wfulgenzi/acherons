@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
 import { membershipsRepo } from "@/db/repositories";
+import { withUserContext } from "@/db/rls";
 import { OrgProvider } from "@/lib/org-context";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -16,7 +16,9 @@ export default async function AppLayout({
 
   if (session.user.isAdmin) redirect("/admin");
 
-  const row = await membershipsRepo.findByUserIdWithOrg(db, session.user.id);
+  const row = await withUserContext(session.user.id, (tx) =>
+    membershipsRepo.findByUserIdWithOrg(tx, session.user.id)
+  );
   if (!row) redirect("/onboarding");
 
   const { memberships: membership, organisations: org } = row;

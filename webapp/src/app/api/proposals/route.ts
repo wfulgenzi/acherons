@@ -2,8 +2,7 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { withRLS } from "@/db/rls";
+import { withRLS, withUserContext } from "@/db/rls";
 import { membershipsRepo, requestsRepo, proposalsRepo, rcaRepo } from "@/db/repositories";
 
 const TimeslotSchema = v.object({
@@ -23,7 +22,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const membership = await membershipsRepo.findByUserId(db, session.user.id);
+  const membership = await withUserContext(session.user.id, (tx) =>
+    membershipsRepo.findByUserId(tx, session.user.id)
+  );
   if (!membership || membership.orgType !== "clinic") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
