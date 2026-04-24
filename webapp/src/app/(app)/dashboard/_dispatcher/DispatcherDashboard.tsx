@@ -1,6 +1,5 @@
-import { eq, and, desc, gte, lt, count, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { requests, proposals, bookings, organisations } from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { requestsRepo, proposalsRepo, bookingsRepo } from "@/db/repositories";
 import { DispatcherStatCards } from "./DispatcherStatCards";
 import { NewProposalsList, type ProposalCardItem } from "./NewProposalsList";
 import { OpenRequestsList, type OpenRequestItem } from "./OpenRequestsList";
@@ -9,72 +8,24 @@ import { QuickActionCard } from "./QuickActionCard";
 interface Props {
   orgId: string;
   orgName: string;
+  userId: string;
   userName: string | null;
 }
 
-export async function DispatcherDashboard({ orgId }: Props) {
+export async function DispatcherDashboard({ orgId, userId }: Props) {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart.getTime() + 86_400_000);
 
-  const [openRequests, pendingProposalRows, todayBookingsRows, pipelineRows] =
-    await Promise.all([
-      // All open requests for this dispatcher org
-      db
-        .select({
-          id: requests.id,
-          patientAge: requests.patientAge,
-          patientGender: requests.patientGender,
-          caseDescription: requests.caseDescription,
-          postcode: requests.postcode,
-          createdAt: requests.createdAt,
-          clinicsContacted: sql<number>`(
-            SELECT COUNT(*) FROM request_clinic_access
-            WHERE request_clinic_access.request_id = ${requests.id}
-          )`.mapWith(Number),
-          proposalCount: sql<number>`(
-            SELECT COUNT(*) FROM proposals
-            WHERE proposals.request_id = ${requests.id}
-          )`.mapWith(Number),
-        })
-        .from(requests)
-        .where(and(eq(requests.dispatcherOrgId, orgId), eq(requests.status, "open")))
-        .orderBy(desc(requests.createdAt)),
-
-      // Pending proposals needing review
-      db
-        .select({
-          proposal: proposals,
-          request: requests,
-          clinicName: organisations.name,
-        })
-        .from(proposals)
-        .innerJoin(requests, eq(requests.id, proposals.requestId))
-        .innerJoin(organisations, eq(organisations.id, proposals.clinicOrgId))
-        .where(
-          and(eq(proposals.dispatcherOrgId, orgId), eq(proposals.status, "pending"))
-        )
-        .orderBy(desc(proposals.createdAt))
-        .limit(6),
-
-      // Today's confirmed bookings count
-      db
-        .select({ total: count() })
-        .from(bookings)
-        .where(
-          and(
-            eq(bookings.dispatcherOrgId, orgId),
-            gte(bookings.confirmedStart, todayStart),
-            lt(bookings.confirmedStart, todayEnd)
-          )
-        ),
-
-      // Total pipeline: all upcoming bookings
-      db
-        .select({ total: count() })
-        .from(bookings)
-        .where(and(eq(bookings.dispatcherOrgId, orgId), gte(bookings.confirmedStart, now))),
-    ]);
+  const [openRequests, pendingProposalRows, todayCount, pipelineCount] =
+    await withRLS({ userId, orgId }, async (tx) =>
+      Promise.all([
+        requestsRepo.findOpenByDispatcher(tx, orgId),
+        proposalsRepo.findPendingByDispatcher(tx, orgId, 6),
+        bookingsRepo.countByDispatcherInWindow(tx, orgId, todayStart, todayEnd),
+        bookingsRepo.countUpcomingByDispatcher(tx, orgId, now),
+      ])
+    );
 
   const dateStr = now.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -108,7 +59,6 @@ export async function DispatcherDashboard({ orgId }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dispatcher hub</h1>
@@ -123,20 +73,16 @@ export async function DispatcherDashboard({ orgId }: Props) {
         </button>
       </header>
 
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
       <div className="px-8 py-8 space-y-7">
-        {/* Stat cards */}
         <DispatcherStatCards
           openRequestsCount={openRequests.length}
           newProposalsCount={pendingProposalRows.length}
-          todayCount={todayBookingsRows[0]?.total ?? 0}
-          pipelineCount={pipelineRows[0]?.total ?? 0}
+          todayCount={todayCount}
+          pipelineCount={pipelineCount}
         />
 
-        {/* New proposals */}
         <NewProposalsList items={proposalItems} />
 
-        {/* Open requests + quick action side-by-side */}
         <div className="grid grid-cols-3 gap-6">
           <div className="col-span-2">
             <OpenRequestsList items={openRequestItems} />

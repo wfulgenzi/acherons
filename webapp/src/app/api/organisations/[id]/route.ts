@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organisations, clinicProfiles } from "@/db/schema";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { UpdateOrganisationSchema } from "@/lib/schemas/organisations";
-import { formatOrg, findOrg } from "../helpers";
+import { orgsRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,13 +13,13 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const { id } = await params;
-  const row = await findOrg(id);
+  const row = await orgsRepo.findById(db, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
   }
 
-  return NextResponse.json(formatOrg(row.organisations, row.clinic_profiles));
+  return NextResponse.json(orgsRepo.formatOrg(row.organisations, row.clinic_profiles));
 }
 
 // ---------------------------------------------------------------------------
@@ -33,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (isApiError(auth)) return auth.error;
 
   const { id } = await params;
-  const row = await findOrg(id);
+  const row = await orgsRepo.findById(db, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
@@ -52,36 +50,21 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const {
-    name,
-    type,
-    address,
-    latitude,
-    longitude,
-    phone,
-    website,
-    mapsUrl,
-    specialisations,
-    openingHours,
-  } = result.output;
+  const { name, type, address, latitude, longitude, phone, website, mapsUrl, specialisations, openingHours } =
+    result.output;
 
   const resolvedType = type ?? row.organisations.type;
   const prevType = row.organisations.type;
 
-  const [updatedOrg] = await db
-    .update(organisations)
-    .set({
-      ...(name !== undefined && { name: name.trim() }),
-      ...(type !== undefined && { type }),
-      updatedAt: new Date(),
-    })
-    .where(eq(organisations.id, id))
-    .returning();
+  const updatedOrg = await orgsRepo.update(db, id, {
+    ...(name !== undefined && { name: name.trim() }),
+    ...(type !== undefined && { type }),
+  });
 
-  let updatedProfile: typeof clinicProfiles.$inferSelect | null = null;
+  let updatedProfile = null;
 
   if (resolvedType === "clinic") {
-    const profileUpdates = {
+    updatedProfile = await orgsRepo.upsertClinicProfile(db, id, !!row.clinic_profiles, {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
@@ -90,26 +73,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       ...(mapsUrl !== undefined && { mapsUrl }),
       ...(specialisations !== undefined && { specialisations }),
       ...(openingHours !== undefined && { openingHours }),
-      updatedAt: new Date(),
-    };
-
-    if (row.clinic_profiles) {
-      [updatedProfile] = await db
-        .update(clinicProfiles)
-        .set(profileUpdates)
-        .where(eq(clinicProfiles.orgId, id))
-        .returning();
-    } else {
-      [updatedProfile] = await db
-        .insert(clinicProfiles)
-        .values({ orgId: id, ...profileUpdates })
-        .returning();
-    }
+    });
   } else if (resolvedType === "dispatch" && prevType === "clinic") {
-    await db.delete(clinicProfiles).where(eq(clinicProfiles.orgId, id));
+    await orgsRepo.deleteClinicProfile(db, id);
   }
 
-  return NextResponse.json(formatOrg(updatedOrg, updatedProfile));
+  return NextResponse.json(orgsRepo.formatOrg(updatedOrg, updatedProfile));
 }
 
 // ---------------------------------------------------------------------------
@@ -121,13 +90,13 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   if (isApiError(auth)) return auth.error;
 
   const { id } = await params;
-  const row = await findOrg(id);
+  const row = await orgsRepo.findById(db, id);
 
   if (!row) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404 });
   }
 
-  await db.delete(organisations).where(eq(organisations.id, id));
+  await orgsRepo.deleteById(db, id);
 
   return new NextResponse(null, { status: 204 });
 }

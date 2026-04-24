@@ -1,16 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq, and, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import {
-  requests,
-  requestClinicAccess,
-  proposals,
-  memberships,
-  organisations,
-  user,
-} from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, requestsRepo } from "@/db/repositories";
 import {
   DispatcherRequestsView,
   type RequestRow,
@@ -24,48 +17,14 @@ export default async function RequestsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership) redirect("/onboarding");
 
-  // ── Clinic view ────────────────────────────────────────────────────────────
   if (membership.orgType === "clinic") {
-    const rows = await db
-      .select({
-        id: requests.id,
-        patientAge: requests.patientAge,
-        patientGender: requests.patientGender,
-        caseDescription: requests.caseDescription,
-        postcode: requests.postcode,
-        createdAt: requests.createdAt,
-        creatorName: user.name,
-        creatorEmail: user.email,
-        proposalStatus: proposals.status,
-      })
-      .from(requests)
-      .innerJoin(
-        requestClinicAccess,
-        and(
-          eq(requestClinicAccess.requestId, requests.id),
-          eq(requestClinicAccess.clinicOrgId, membership.orgId)
-        )
-      )
-      .leftJoin(
-        proposals,
-        and(
-          eq(proposals.requestId, requests.id),
-          eq(proposals.clinicOrgId, membership.orgId)
-        )
-      )
-      .leftJoin(user, eq(user.id, requests.createdByUserId))
-      .where(eq(requests.status, "open"))
-      .orderBy(requests.createdAt);
+    const rows = await withRLS(
+      { userId: session.user.id, orgId: membership.orgId },
+      (tx) => requestsRepo.findAccessibleByClinic(tx, membership.orgId)
+    );
 
     const items: ClinicRequestItem[] = rows.map((r) => ({
       id: r.id,
@@ -82,35 +41,10 @@ export default async function RequestsPage() {
     return <ClinicRequestsView items={items} />;
   }
 
-  // ── Dispatcher view ────────────────────────────────────────────────────────
-  const rows = await db
-    .select({
-      id: requests.id,
-      patientAge: requests.patientAge,
-      patientGender: requests.patientGender,
-      caseDescription: requests.caseDescription,
-      postcode: requests.postcode,
-      createdAt: requests.createdAt,
-      creatorName: user.name,
-      creatorEmail: user.email,
-      clinicsContacted: sql<number>`(
-        SELECT COUNT(*) FROM request_clinic_access
-        WHERE request_clinic_access.request_id = ${requests.id}
-      )`.mapWith(Number),
-      proposalCount: sql<number>`(
-        SELECT COUNT(*) FROM proposals
-        WHERE proposals.request_id = ${requests.id}
-      )`.mapWith(Number),
-    })
-    .from(requests)
-    .leftJoin(user, eq(user.id, requests.createdByUserId))
-    .where(
-      and(
-        eq(requests.dispatcherOrgId, membership.orgId),
-        eq(requests.status, "open")
-      )
-    )
-    .orderBy(desc(requests.createdAt));
+  const rows = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    (tx) => requestsRepo.findOpenByDispatcher(tx, membership.orgId)
+  );
 
   const data: RequestRow[] = rows.map((r) => ({
     id: r.id,

@@ -1,42 +1,22 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { memberships, organisations, clinicProfiles } from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, orgsRepo } from "@/db/repositories";
 import { NewRequestFlow, type ClinicItem } from "./NewRequestFlow";
 
 export default async function NewRequestPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  // Only dispatchers can create requests
-  const memberRows = await db
-    .select({ orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
+  if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
 
-  if (!memberRows[0] || memberRows[0].orgType !== "dispatch") {
-    redirect("/dashboard");
-  }
-
-  // Pre-fetch all clinics with their profiles
-  const clinicRows = await db
-    .select({
-      id: organisations.id,
-      name: organisations.name,
-      address: clinicProfiles.address,
-      phone: clinicProfiles.phone,
-      latitude: clinicProfiles.latitude,
-      longitude: clinicProfiles.longitude,
-      openingHours: clinicProfiles.openingHours,
-    })
-    .from(organisations)
-    .innerJoin(clinicProfiles, eq(clinicProfiles.orgId, organisations.id))
-    .where(eq(organisations.type, "clinic"))
-    .orderBy(organisations.name);
+  const clinicRows = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    (tx) => orgsRepo.findAllClinics(tx)
+  );
 
   const clinics: ClinicItem[] = clinicRows.map((r) => ({
     id: r.id,

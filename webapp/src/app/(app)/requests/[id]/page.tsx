@@ -1,18 +1,10 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import {
-  requests,
-  requestClinicAccess,
-  organisations,
-  clinicProfiles,
-  proposals,
-  memberships,
-  user,
-} from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, requestsRepo, rcaRepo, proposalsRepo } from "@/db/repositories";
 import { ProposalsList, type ProposalItem } from "./ProposalsList";
 import { RequestClinicsMap } from "./RequestClinicsMap";
 import type { OpeningHours } from "@/db/schema";
@@ -33,46 +25,22 @@ export default async function RequestDetailPage({ params }: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
 
-  // Fetch the request
-  const [req] = await db
-    .select()
-    .from(requests)
-    .where(and(eq(requests.id, id), eq(requests.dispatcherOrgId, membership.orgId)))
-    .limit(1);
+  const [req, clinicRows, proposalRows] = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    async (tx) =>
+      Promise.all([
+        requestsRepo.findByIdForDispatcher(tx, id, membership.orgId),
+        rcaRepo.findClinicsOnRequest(tx, id),
+        proposalsRepo.findByRequestId(tx, id),
+      ])
+  );
 
   if (!req) notFound();
 
-  // Fetch creator name
-  const [creator] = await db
-    .select({ name: user.name, email: user.email })
-    .from(user)
-    .where(eq(user.id, req.createdByUserId))
-    .limit(1);
-
-  // Fetch clinics on this request
-  const clinicRows = await db
-    .select({
-      id: organisations.id,
-      name: organisations.name,
-      address: clinicProfiles.address,
-      latitude: clinicProfiles.latitude,
-      longitude: clinicProfiles.longitude,
-      openingHours: clinicProfiles.openingHours,
-    })
-    .from(requestClinicAccess)
-    .innerJoin(organisations, eq(organisations.id, requestClinicAccess.clinicOrgId))
-    .leftJoin(clinicProfiles, eq(clinicProfiles.orgId, organisations.id))
-    .where(eq(requestClinicAccess.requestId, id));
+  const creator = await requestsRepo.findCreator(db, req.createdByUserId);
 
   const clinics: ClinicOnRequest[] = clinicRows.map((r) => ({
     id: r.id,
@@ -82,17 +50,6 @@ export default async function RequestDetailPage({ params }: RouteContext) {
     longitude: r.longitude ?? null,
     openingHours: r.openingHours ?? null,
   }));
-
-  // Fetch proposals
-  const proposalRows = await db
-    .select({
-      proposal: proposals,
-      clinicName: organisations.name,
-    })
-    .from(proposals)
-    .innerJoin(organisations, eq(organisations.id, proposals.clinicOrgId))
-    .where(eq(proposals.requestId, id))
-    .orderBy(proposals.createdAt);
 
   const proposalItems: ProposalItem[] = proposalRows.map((r) => ({
     id: r.proposal.id,
@@ -106,11 +63,14 @@ export default async function RequestDetailPage({ params }: RouteContext) {
   const pendingCount = proposalItems.filter((p) => p.status === "pending").length;
   const shortId = req.id.slice(0, 8).toUpperCase();
   const creatorLabel = creator?.name || creator?.email || "Unknown";
-  const createdLabel = req.createdAt.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  }) + ", " + req.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const createdLabel =
+    req.createdAt.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }) +
+    ", " +
+    req.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
   const genderLabel =
     req.patientGender === "male" ? "Male"
@@ -120,7 +80,6 @@ export default async function RequestDetailPage({ params }: RouteContext) {
 
   return (
     <div className="flex-1 min-h-screen">
-      {/* Header — same background as page, distinguished only by bottom border */}
       <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
         <div>
           <h1 className="text-xl font-bold text-gray-900">REQ-{shortId}</h1>
@@ -139,7 +98,6 @@ export default async function RequestDetailPage({ params }: RouteContext) {
       </header>
 
       <div className="px-8 py-8 space-y-6">
-        {/* Back link */}
         <Link
           href="/requests"
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-800 transition-colors"
@@ -148,7 +106,6 @@ export default async function RequestDetailPage({ params }: RouteContext) {
           All requests
         </Link>
 
-        {/* Info card */}
         <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3 flex-wrap">
@@ -170,9 +127,7 @@ export default async function RequestDetailPage({ params }: RouteContext) {
           <p className="text-sm text-gray-700 leading-relaxed">{req.caseDescription}</p>
         </div>
 
-        {/* Clinics card + map side by side — items-stretch so map matches card height */}
         <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-5 items-stretch">
-          {/* Clinics card */}
           <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-sm font-bold text-gray-900">Clinics on this request</h2>
@@ -190,13 +145,11 @@ export default async function RequestDetailPage({ params }: RouteContext) {
             </div>
           </div>
 
-          {/* Map — full height of the grid row, no fixed px */}
           <div className="rounded-2xl overflow-hidden border border-brand-200 shadow-sm min-h-[220px]">
             <RequestClinicsMap clinics={clinics} />
           </div>
         </div>
 
-        {/* Proposals card */}
         <div className="bg-brand-50 rounded-2xl border border-brand-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-5">
             <h2 className="text-sm font-bold text-gray-900">Proposals</h2>

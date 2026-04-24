@@ -1,22 +1,16 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import {
-  requests,
-  requestClinicAccess,
-  memberships,
-  organisations,
-} from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, requestsRepo, rcaRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const UpdateRequestSchema = v.partial(
   v.object({
     caseDescription: v.pipe(v.string(), v.minLength(1)),
-    // Replaces the entire clinic access list when provided
     clinicIds: v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.minLength(1)),
   })
 );
@@ -27,34 +21,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership || membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
-
-  const requestRows = await db
-    .select()
-    .from(requests)
-    .where(eq(requests.id, id))
-    .limit(1);
-
-  const req = requestRows[0];
-  if (!req) {
-    return NextResponse.json({ error: "Request not found." }, { status: 404 });
-  }
-
-  if (req.dispatcherOrgId !== membership.orgId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   const body = await request.json().catch(() => null);
   const parsed = v.safeParse(UpdateRequestSchema, body);
@@ -64,21 +36,26 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const { caseDescription, clinicIds } = parsed.output;
 
-  if (caseDescription !== undefined) {
-    await db
-      .update(requests)
-      .set({ caseDescription, updatedAt: new Date() })
-      .where(eq(requests.id, id));
-  }
+  const found = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    async (tx) => {
+      // RLS policy enforces dispatcher_org_id = app.org_id, so this returns
+      // null if the request doesn't exist or belongs to another org
+      const req = await requestsRepo.findByIdForDispatcher(tx, id, membership.orgId);
+      if (!req) return false;
 
-  if (clinicIds !== undefined) {
-    // Replace clinic access list atomically
-    await db
-      .delete(requestClinicAccess)
-      .where(eq(requestClinicAccess.requestId, id));
-    await db.insert(requestClinicAccess).values(
-      clinicIds.map((clinicOrgId) => ({ requestId: id, clinicOrgId }))
-    );
+      if (caseDescription !== undefined) {
+        await requestsRepo.updateCaseDescription(tx, id, caseDescription);
+      }
+      if (clinicIds !== undefined) {
+        await rcaRepo.replaceAll(tx, id, clinicIds);
+      }
+      return true;
+    }
+  );
+
+  if (!found) {
+    return NextResponse.json({ error: "Request not found." }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });

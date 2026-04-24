@@ -1,15 +1,9 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import {
-  requests,
-  requestClinicAccess,
-  organisations,
-  clinicProfiles,
-  memberships,
-} from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, requestsRepo, rcaRepo, orgsRepo } from "@/db/repositories";
 import { EditRequestFlow, type EditClinicItem } from "./EditRequestFlow";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -19,48 +13,21 @@ export default async function EditRequestPage({ params }: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership || membership.orgType !== "dispatch") redirect("/dashboard");
 
-  const [req] = await db
-    .select()
-    .from(requests)
-    .where(and(eq(requests.id, id), eq(requests.dispatcherOrgId, membership.orgId)))
-    .limit(1);
+  const [req, allClinicRows, selectedClinicIds] = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    async (tx) =>
+      Promise.all([
+        requestsRepo.findByIdForDispatcher(tx, id, membership.orgId),
+        orgsRepo.findAllClinics(tx),
+        rcaRepo.findClinicIdsByRequestId(tx, id),
+      ])
+  );
 
   if (!req) notFound();
   if (req.status !== "open") redirect(`/requests/${id}`);
-
-  // All clinics (for selection)
-  const allClinicRows = await db
-    .select({
-      id: organisations.id,
-      name: organisations.name,
-      address: clinicProfiles.address,
-      phone: clinicProfiles.phone,
-      latitude: clinicProfiles.latitude,
-      longitude: clinicProfiles.longitude,
-      openingHours: clinicProfiles.openingHours,
-    })
-    .from(organisations)
-    .innerJoin(clinicProfiles, eq(clinicProfiles.orgId, organisations.id))
-    .where(eq(organisations.type, "clinic"))
-    .orderBy(organisations.name);
-
-  // Currently selected clinic IDs
-  const accessRows = await db
-    .select({ clinicOrgId: requestClinicAccess.clinicOrgId })
-    .from(requestClinicAccess)
-    .where(eq(requestClinicAccess.requestId, id));
-
-  const selectedClinicIds = accessRows.map((r) => r.clinicOrgId);
 
   const clinics: EditClinicItem[] = allClinicRows.map((r) => ({
     id: r.id,

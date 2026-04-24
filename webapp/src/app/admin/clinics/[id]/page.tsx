@@ -1,10 +1,9 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { organisations, clinicProfiles, memberships, user } from "@/db/schema";
+import { orgsRepo, membershipsRepo } from "@/db/repositories";
 import { OrgMembersTable, type OrgMemberRow } from "@/components/OrgMembersTable";
 
 type Props = { params: Promise<{ id: string }> };
@@ -15,28 +14,11 @@ export default async function ClinicDetailPage({ params }: Props) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user.isAdmin) redirect("/dashboard");
 
-  const [rows, memberRows] = await Promise.all([
-    db
-      .select()
-      .from(organisations)
-      .leftJoin(clinicProfiles, eq(organisations.id, clinicProfiles.orgId))
-      .where(eq(organisations.id, id))
-      .limit(1),
-    db
-      .select({
-        userId: memberships.userId,
-        role: memberships.role,
-        name: user.name,
-        email: user.email,
-        joinedAt: memberships.createdAt,
-      })
-      .from(memberships)
-      .innerJoin(user, eq(user.id, memberships.userId))
-      .where(eq(memberships.orgId, id))
-      .orderBy(memberships.createdAt),
+  const [row, memberRows] = await Promise.all([
+    orgsRepo.findById(db, id),
+    membershipsRepo.findByOrgId(db, id),
   ]);
 
-  const row = rows[0];
   if (!row || row.organisations.type !== "clinic") notFound();
 
   const { organisations: org, clinic_profiles: profile } = row;

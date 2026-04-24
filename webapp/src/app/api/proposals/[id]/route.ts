@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { proposals, requests, bookings, memberships, organisations } from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, proposalsRepo, requestsRepo, bookingsRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,43 +18,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Caller must belong to a dispatcher org
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership || membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
-
-  const proposalRows = await db
-    .select()
-    .from(proposals)
-    .where(eq(proposals.id, id))
-    .limit(1);
-
-  const proposal = proposalRows[0];
-  if (!proposal) {
-    return NextResponse.json({ error: "Proposal not found." }, { status: 404 });
-  }
-
-  // Ensure this proposal belongs to the caller's dispatcher org
-  if (proposal.dispatcherOrgId !== membership.orgId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  if (proposal.status !== "pending") {
-    return NextResponse.json(
-      { error: "Proposal is no longer pending." },
-      { status: 409 }
-    );
-  }
 
   const body = await request.json().catch(() => null);
   const parsed = v.safeParse(ActionSchema, body);
@@ -64,43 +33,51 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const { action } = parsed.output;
 
-  if (action === "refuse") {
-    await db
-      .update(proposals)
-      .set({ status: "rejected", updatedAt: new Date() })
-      .where(eq(proposals.id, id));
-    return NextResponse.json({ ok: true });
+  const result = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    async (tx) => {
+      const proposal = await proposalsRepo.findById(tx, id);
+      if (!proposal) return { error: "Proposal not found.", status: 404 } as const;
+
+      // RLS ensures dispatcher_org_id = app.org_id, but guard explicitly
+      if (proposal.dispatcherOrgId !== membership.orgId) {
+        return { error: "Forbidden", status: 403 } as const;
+      }
+
+      if (proposal.status !== "pending") {
+        return { error: "Proposal is no longer pending.", status: 409 } as const;
+      }
+
+      if (action === "refuse") {
+        await proposalsRepo.refuse(tx, id);
+        return { ok: true } as const;
+      }
+
+      // Accept: create booking + confirm the request atomically
+      const slots = proposal.proposedTimeslots;
+      if (!slots || slots.length === 0) {
+        return { error: "No timeslots on this proposal.", status: 400 } as const;
+      }
+
+      const firstSlot = slots[0];
+      await bookingsRepo.create(tx, {
+        requestId: proposal.requestId,
+        proposalId: proposal.id,
+        dispatcherOrgId: proposal.dispatcherOrgId,
+        clinicOrgId: proposal.clinicOrgId,
+        confirmedStart: new Date(firstSlot.start),
+        confirmedEnd: new Date(firstSlot.end),
+      });
+      await proposalsRepo.accept(tx, id);
+      await requestsRepo.confirm(tx, proposal.requestId);
+
+      return { ok: true } as const;
+    }
+  );
+
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
-
-  // Accept: create booking + confirm request
-  const slots = proposal.proposedTimeslots;
-  if (!slots || slots.length === 0) {
-    return NextResponse.json(
-      { error: "No timeslots on this proposal." },
-      { status: 400 }
-    );
-  }
-
-  const firstSlot = slots[0];
-
-  await db.insert(bookings).values({
-    requestId: proposal.requestId,
-    proposalId: proposal.id,
-    dispatcherOrgId: proposal.dispatcherOrgId,
-    clinicOrgId: proposal.clinicOrgId,
-    confirmedStart: new Date(firstSlot.start),
-    confirmedEnd: new Date(firstSlot.end),
-  });
-
-  await db
-    .update(proposals)
-    .set({ status: "accepted", updatedAt: new Date() })
-    .where(eq(proposals.id, id));
-
-  await db
-    .update(requests)
-    .set({ status: "confirmed", updatedAt: new Date() })
-    .where(eq(requests.id, proposal.requestId));
 
   return NextResponse.json({ ok: true });
 }

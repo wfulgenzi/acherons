@@ -2,10 +2,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
-import { count, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { organisations, clinicProfiles, memberships } from "@/db/schema";
+import { orgsRepo, membershipsRepo } from "@/db/repositories";
 import { ClinicsTable, type ClinicRow } from "./ClinicsTable";
 
 export default async function ClinicsPage() {
@@ -13,16 +12,8 @@ export default async function ClinicsPage() {
   if (!session?.user.isAdmin) redirect("/dashboard");
 
   const [rows, memberCounts] = await Promise.all([
-    db
-      .select()
-      .from(organisations)
-      .leftJoin(clinicProfiles, eq(organisations.id, clinicProfiles.orgId))
-      .where(eq(organisations.type, "clinic"))
-      .orderBy(organisations.name),
-    db
-      .select({ orgId: memberships.orgId, count: count() })
-      .from(memberships)
-      .groupBy(memberships.orgId),
+    orgsRepo.findAllByType(db, "clinic"),
+    membershipsRepo.memberCountsByOrg(db),
   ]);
 
   const countMap = Object.fromEntries(memberCounts.map((r) => [r.orgId, r.count]));

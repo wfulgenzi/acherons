@@ -2,10 +2,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
-import { count, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { organisations, memberships } from "@/db/schema";
+import { orgsRepo, membershipsRepo } from "@/db/repositories";
 import { DispatchersTable, type DispatcherRow } from "./DispatchersTable";
 
 export default async function DispatchersPage() {
@@ -13,24 +12,17 @@ export default async function DispatchersPage() {
   if (!session?.user.isAdmin) redirect("/dashboard");
 
   const [rows, memberCounts] = await Promise.all([
-    db
-      .select()
-      .from(organisations)
-      .where(eq(organisations.type, "dispatch"))
-      .orderBy(organisations.name),
-    db
-      .select({ orgId: memberships.orgId, count: count() })
-      .from(memberships)
-      .groupBy(memberships.orgId),
+    orgsRepo.findAllByType(db, "dispatch"),
+    membershipsRepo.memberCountsByOrg(db),
   ]);
 
   const countMap = Object.fromEntries(memberCounts.map((r) => [r.orgId, r.count]));
 
   const data: DispatcherRow[] = rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    memberCount: countMap[r.id] ?? 0,
-    createdAt: r.createdAt.toISOString(),
+    id: r.organisations.id,
+    name: r.organisations.name,
+    memberCount: countMap[r.organisations.id] ?? 0,
+    createdAt: r.organisations.createdAt.toISOString(),
   }));
 
   return (

@@ -1,26 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organisations, clinicProfiles } from "@/db/schema";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { CreateOrganisationSchema } from "@/lib/schemas/organisations";
-import { formatOrg } from "./helpers";
+import { orgsRepo } from "@/db/repositories";
 
 // ---------------------------------------------------------------------------
 // GET /api/organisations — public
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  const rows = await db
-    .select()
-    .from(organisations)
-    .leftJoin(clinicProfiles, eq(organisations.id, clinicProfiles.orgId))
-    .orderBy(organisations.name);
-
-  return NextResponse.json(
-    rows.map((r) => formatOrg(r.organisations, r.clinic_profiles))
-  );
+  const rows = await orgsRepo.findAll(db);
+  return NextResponse.json(rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)));
 }
 
 // ---------------------------------------------------------------------------
@@ -44,42 +35,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const {
-    name,
-    type,
-    address,
-    latitude,
-    longitude,
-    phone,
-    website,
-    mapsUrl,
-    specialisations,
-    openingHours,
-  } = result.output;
+  const { name, type, address, latitude, longitude, phone, website, mapsUrl, specialisations, openingHours } =
+    result.output;
 
-  const [org] = await db
-    .insert(organisations)
-    .values({ name: name.trim(), type })
-    .returning();
+  const org = await orgsRepo.create(db, name.trim(), type);
 
-  let profile: typeof clinicProfiles.$inferSelect | null = null;
-
+  let profile = null;
   if (type === "clinic") {
-    [profile] = await db
-      .insert(clinicProfiles)
-      .values({
-        orgId: org.id,
-        address: address ?? null,
-        latitude: latitude ?? null,
-        longitude: longitude ?? null,
-        phone: phone ?? null,
-        website: website ?? null,
-        mapsUrl: mapsUrl ?? null,
-        specialisations: specialisations ?? null,
-        openingHours: openingHours ?? null,
-      })
-      .returning();
+    profile = await orgsRepo.upsertClinicProfile(db, org.id, false, {
+      address: address ?? null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
+      phone: phone ?? null,
+      website: website ?? null,
+      mapsUrl: mapsUrl ?? null,
+      specialisations: specialisations ?? null,
+      openingHours: openingHours ?? null,
+    });
   }
 
-  return NextResponse.json(formatOrg(org, profile), { status: 201 });
+  return NextResponse.json(orgsRepo.formatOrg(org, profile ?? null), { status: 201 });
 }

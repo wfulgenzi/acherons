@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { requests, requestClinicAccess, memberships, organisations } from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, requestsRepo, rcaRepo } from "@/db/repositories";
 
 const CreateRequestSchema = v.object({
   patientGender: v.picklist(["male", "female", "other", "unknown"]),
@@ -20,15 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify the user belongs to a dispatcher org
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership || membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -39,30 +31,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { patientGender, patientAge, postcode, caseDescription, clinicIds } =
-    parsed.output;
+  const { patientGender, patientAge, postcode, caseDescription, clinicIds } = parsed.output;
 
-  const [newRequest] = await db
-    .insert(requests)
-    .values({
-      dispatcherOrgId: membership.orgId,
-      createdByUserId: session.user.id,
-      patientGender,
-      patientAge,
-      postcode,
-      caseDescription,
-      status: "open",
-    })
-    .returning();
-
-  if (clinicIds.length > 0) {
-    await db.insert(requestClinicAccess).values(
-      clinicIds.map((clinicOrgId) => ({
-        requestId: newRequest.id,
-        clinicOrgId,
-      }))
-    );
-  }
+  const newRequest = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    async (tx) => {
+      const req = await requestsRepo.create(tx, {
+        dispatcherOrgId: membership.orgId,
+        createdByUserId: session.user.id,
+        patientGender,
+        patientAge,
+        postcode,
+        caseDescription,
+      });
+      await rcaRepo.insertMany(tx, req.id, clinicIds);
+      return req;
+    }
+  );
 
   return NextResponse.json({ id: newRequest.id }, { status: 201 });
 }

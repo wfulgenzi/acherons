@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { memberships, organisations } from "@/db/schema";
+import { membershipsRepo } from "@/db/repositories";
 import { OrgProvider } from "@/lib/org-context";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -15,19 +14,9 @@ export default async function AppLayout({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  // Admins always go to the admin panel — skip the org query entirely
   if (session.user.isAdmin) redirect("/admin");
 
-  const rows = await db
-    .select()
-    .from(memberships)
-    .innerJoin(organisations, eq(memberships.orgId, organisations.id))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const row = rows[0];
-
-  // Regular users with no org go to onboarding
+  const row = await membershipsRepo.findByUserIdWithOrg(db, session.user.id);
   if (!row) redirect("/onboarding");
 
   const { memberships: membership, organisations: org } = row;

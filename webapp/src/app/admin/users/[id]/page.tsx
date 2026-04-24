@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { user, memberships, organisations } from "@/db/schema";
+import { orgsRepo } from "@/db/repositories";
 import { MembershipManager, type CurrentMembership, type OrgOption } from "./MembershipManager";
 import { Badge } from "@/components/ui/Badge";
 
@@ -16,7 +17,7 @@ export default async function UserDetailPage({ params }: Props) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user.isAdmin) redirect("/dashboard");
 
-  const [userRows, membershipRows, orgRows] = await Promise.all([
+  const [userRows, membershipRows, allOrgs] = await Promise.all([
     db.select().from(user).where(eq(user.id, id)).limit(1),
     db
       .select()
@@ -24,9 +25,7 @@ export default async function UserDetailPage({ params }: Props) {
       .leftJoin(organisations, eq(organisations.id, memberships.orgId))
       .where(eq(memberships.userId, id))
       .limit(1),
-    db.select({ id: organisations.id, name: organisations.name, type: organisations.type })
-      .from(organisations)
-      .orderBy(organisations.name),
+    orgsRepo.findAllSummary(db),
   ]);
 
   const u = userRows[0];
@@ -42,7 +41,7 @@ export default async function UserDetailPage({ params }: Props) {
       }
     : null;
 
-  const allOrgs: OrgOption[] = orgRows.map((o) => ({
+  const orgOptions: OrgOption[] = allOrgs.map((o) => ({
     id: o.id,
     name: o.name,
     type: o.type,
@@ -50,7 +49,6 @@ export default async function UserDetailPage({ params }: Props) {
 
   return (
     <div className="p-8 max-w-2xl">
-      {/* Back */}
       <div className="mb-6">
         <Link
           href="/admin/users"
@@ -77,7 +75,6 @@ export default async function UserDetailPage({ params }: Props) {
       </div>
 
       <div className="space-y-4">
-        {/* Account details */}
         <InfoCard title="Account">
           <InfoRow label="Name" value={u.name} />
           <InfoRow label="Email" value={u.email} />
@@ -92,7 +89,6 @@ export default async function UserDetailPage({ params }: Props) {
           <InfoRow label="Admin" value={u.isAdmin ? "Yes" : "No"} />
         </InfoCard>
 
-        {/* Membership */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-900">Organisation</h2>
@@ -101,7 +97,7 @@ export default async function UserDetailPage({ params }: Props) {
             <MembershipManager
               userId={u.id}
               membership={membership}
-              allOrgs={allOrgs}
+              allOrgs={orgOptions}
             />
           </div>
         </div>

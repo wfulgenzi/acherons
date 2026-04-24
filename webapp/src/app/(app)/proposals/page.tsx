@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { proposals, requests, memberships, organisations } from "@/db/schema";
+import { withRLS } from "@/db/rls";
+import { membershipsRepo, proposalsRepo } from "@/db/repositories";
 import {
   ClinicProposalsView,
   type ProposalRow,
@@ -18,33 +18,14 @@ export default async function ProposalsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  const memberRows = await db
-    .select({ orgId: memberships.orgId, orgType: organisations.type })
-    .from(memberships)
-    .innerJoin(organisations, eq(organisations.id, memberships.orgId))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  const membership = memberRows[0];
+  const membership = await membershipsRepo.findByUserId(db, session.user.id);
   if (!membership) redirect("/onboarding");
 
-  // ── Clinic view ────────────────────────────────────────────────────────────
   if (membership.orgType === "clinic") {
-    const rows = await db
-      .select({
-        id: proposals.id,
-        status: proposals.status,
-        proposedTimeslots: proposals.proposedTimeslots,
-        createdAt: proposals.createdAt,
-        requestId: requests.id,
-        patientAge: requests.patientAge,
-        patientGender: requests.patientGender,
-        caseDescription: requests.caseDescription,
-      })
-      .from(proposals)
-      .innerJoin(requests, eq(requests.id, proposals.requestId))
-      .where(eq(proposals.clinicOrgId, membership.orgId))
-      .orderBy(desc(proposals.createdAt));
+    const rows = await withRLS(
+      { userId: session.user.id, orgId: membership.orgId },
+      (tx) => proposalsRepo.findByClinic(tx, membership.orgId)
+    );
 
     const data: ProposalRow[] = rows.map((r) => {
       const slots = r.proposedTimeslots as ProposedTimeslots | null;
@@ -65,26 +46,10 @@ export default async function ProposalsPage() {
     return <ClinicProposalsView data={data} />;
   }
 
-  // ── Dispatcher view ────────────────────────────────────────────────────────
-  const clinicOrg = organisations;
-
-  const rows = await db
-    .select({
-      id: proposals.id,
-      status: proposals.status,
-      proposedTimeslots: proposals.proposedTimeslots,
-      createdAt: proposals.createdAt,
-      requestId: requests.id,
-      patientAge: requests.patientAge,
-      patientGender: requests.patientGender,
-      caseDescription: requests.caseDescription,
-      clinicName: clinicOrg.name,
-    })
-    .from(proposals)
-    .innerJoin(requests, eq(requests.id, proposals.requestId))
-    .innerJoin(clinicOrg, eq(clinicOrg.id, proposals.clinicOrgId))
-    .where(eq(proposals.dispatcherOrgId, membership.orgId))
-    .orderBy(desc(proposals.createdAt));
+  const rows = await withRLS(
+    { userId: session.user.id, orgId: membership.orgId },
+    (tx) => proposalsRepo.findByDispatcher(tx, membership.orgId)
+  );
 
   const data: DispatcherProposalRow[] = rows.map((r) => {
     const slots = r.proposedTimeslots as ProposedTimeslots | null;
