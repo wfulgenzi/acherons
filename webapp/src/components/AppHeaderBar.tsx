@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BellIcon } from "@/components/BellIcon";
 import { getNotificationPath, labelForNotificationType } from "@/lib/notifications";
+import { getFallbackPageHeader } from "@/lib/route-fallback-page-header";
+import { usePageHeader } from "@/lib/page-header-context";
 import { useNotifications } from "@/providers";
 
 function formatTime(iso: string) {
@@ -20,6 +23,14 @@ function formatTime(iso: string) {
 }
 
 export function AppHeaderBar() {
+  const pathname = usePathname();
+  const { header: pageHeader } = usePageHeader();
+  const effective = useMemo(() => {
+    if (pageHeader) {
+      return pageHeader;
+    }
+    return getFallbackPageHeader(pathname) ?? { title: "" };
+  }, [pageHeader, pathname]);
   const { items, unreadCount, markOneRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
@@ -55,8 +66,27 @@ export function AppHeaderBar() {
   }, [markAllRead, markingAll, unreadCount]);
 
   return (
-    <header className="sticky top-0 z-30 h-14 shrink-0 border-b border-brand-200 bg-brand-50/95 backdrop-blur-sm flex items-center justify-end gap-2 px-6">
-      <div className="relative" ref={wrapRef}>
+    <header className="sticky top-0 z-30 min-h-14 shrink-0 border-b border-brand-200 bg-brand-50/95 backdrop-blur-sm flex items-center justify-between gap-3 px-6 py-2">
+      <div className="min-w-0 flex-1 pr-2">
+        {effective.title ? (
+          <>
+            <h1 className="truncate text-base font-bold text-gray-900 sm:text-lg">
+              {effective.title}
+            </h1>
+            {effective.subtitle ? (
+              <p className="truncate text-xs text-gray-500 sm:text-sm">
+                {effective.subtitle}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+      {effective.actions != null && (
+        <div className="shrink-0 flex items-center gap-2 max-sm:max-w-[50vw]">
+          {effective.actions}
+        </div>
+      )}
+      <div className="relative shrink-0" ref={wrapRef}>
         <button
           type="button"
           onClick={toggle}

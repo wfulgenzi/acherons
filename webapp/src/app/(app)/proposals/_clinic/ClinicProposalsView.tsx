@@ -1,5 +1,6 @@
 "use client";
 
+import { SetPageHeader } from "@/lib/page-header-context";
 import { TableList, type TableColumn } from "@/components/TableList";
 
 export type ProposalRow = {
@@ -103,12 +104,10 @@ const columns: TableColumn<ProposalRow>[] = [
 export function ClinicProposalsView({ data }: { data: ProposalRow[] }) {
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-14 z-10">
-        <h1 className="text-xl font-bold text-gray-900">My Proposals</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Proposals you have submitted to dispatchers.
-        </p>
-      </header>
+      <SetPageHeader
+        title="My Proposals"
+        subtitle="Proposals you have submitted to dispatchers."
+      />
 
       <div className="px-8 py-8">
         <TableList

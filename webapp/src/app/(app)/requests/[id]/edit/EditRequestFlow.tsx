@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { SetPageHeader } from "@/lib/page-header-context";
 import type { OpeningHours } from "@/db/schema";
 import { ClinicSelector } from "../../new/ClinicSelector";
 
@@ -33,6 +34,22 @@ export function EditRequestFlow({
   const router = useRouter();
   const [description, setDescription] = useState(initialDescription);
   const [submitting, setSubmitting] = useState(false);
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const headerActions = useMemo(
+    () => (
+      <button
+        type="button"
+        onClick={handleBack}
+        className="shrink-0 text-sm text-gray-500 transition-colors hover:text-brand-800"
+      >
+        ← Cancel
+      </button>
+    ),
+    [handleBack],
+  );
 
   async function handleSave(selectedClinicIds: string[]) {
     setSubmitting(true);
@@ -57,21 +74,11 @@ export function EditRequestFlow({
 
   return (
     <div className="flex-1 min-h-screen">
-      {/* Header */}
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Edit request</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Update the description and clinic selection
-          </p>
-        </div>
-        <button
-          onClick={() => router.back()}
-          className="text-sm text-gray-500 hover:text-brand-800 transition-colors"
-        >
-          ← Cancel
-        </button>
-      </header>
+      <SetPageHeader
+        title="Edit request"
+        subtitle="Update the description and clinic selection"
+        actions={headerActions}
+      />
 
       <div className="px-8 py-8 space-y-6 max-w-5xl">
         {/* Description card */}

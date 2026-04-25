@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { SetPageHeader } from "@/lib/page-header-context";
 import { BookingsCalendar } from "./BookingsCalendar";
 import { BookingsList } from "./BookingsList";
 import type { ClinicBookingItem } from "./types";
@@ -32,44 +33,45 @@ export function ClinicBookingsView({ items, today }: Props) {
   const upcomingCount = upcomingItems.length;
   const pastCount = pastItems.length;
 
+  const viewToggle = useMemo(
+    () => (
+      <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
+        <button
+          type="button"
+          onClick={() => setView("calendar")}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+            view === "calendar"
+              ? "bg-brand-600 text-white shadow-sm"
+              : "text-gray-500 hover:text-brand-800"
+          }`}
+        >
+          <CalendarIcon />
+          Calendar
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("list")}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+            view === "list"
+              ? "bg-brand-600 text-white shadow-sm"
+              : "text-gray-500 hover:text-brand-800"
+          }`}
+        >
+          <ListIcon />
+          List
+        </button>
+      </div>
+    ),
+    [view],
+  );
+
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-14 z-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Bookings</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Confirmed appointments dispatched to your clinic.
-            </p>
-          </div>
-
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setView("calendar")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                view === "calendar"
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-brand-800"
-              }`}
-            >
-              <CalendarIcon />
-              Calendar
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                view === "list"
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-brand-800"
-              }`}
-            >
-              <ListIcon />
-              List
-            </button>
-          </div>
-        </div>
-      </header>
+      <SetPageHeader
+        title="Bookings"
+        subtitle="Confirmed appointments dispatched to your clinic."
+        actions={viewToggle}
+      />
 
       <div className="px-8 py-8 space-y-6">
         {view === "calendar" ? (

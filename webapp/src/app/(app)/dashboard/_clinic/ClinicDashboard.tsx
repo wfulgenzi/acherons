@@ -1,5 +1,6 @@
 import { withRLS } from "@/db/rls";
 import { requestsRepo, bookingsRepo, proposalsRepo } from "@/db/repositories";
+import { SetPageHeader } from "@/lib/page-header-context";
 import { StatCards } from "./StatCards";
 import { NewRequestsList } from "./NewRequestsList";
 import { UpcomingBookings } from "./UpcomingBookings";
@@ -64,22 +65,10 @@ export async function ClinicDashboard({ orgId, userId, userName }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {greeting}
-            {firstName ? `, ${firstName}` : ""}
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5 capitalize">{dateStr}</p>
-        </div>
-
-        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 w-52 cursor-text">
-          <SearchIcon />
-          <span className="text-sm text-gray-400 select-none">
-            Search patients…
-          </span>
-        </div>
-      </header>
+      <SetPageHeader
+        title={`${greeting}${firstName ? `, ${firstName}` : ""}`}
+        subtitle={dateStr}
+      />
 
       <div className="px-8 py-8 space-y-7">
         <StatCards
@@ -136,24 +125,5 @@ export async function ClinicDashboard({ orgId, userId, userName }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-gray-400 shrink-0"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
   );
 }

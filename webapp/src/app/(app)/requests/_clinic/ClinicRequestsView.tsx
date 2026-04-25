@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { SetPageHeader } from "@/lib/page-header-context";
 import {
   ProposalModal,
   type RequestForProposal,
@@ -28,23 +29,23 @@ export function ClinicRequestsView({ items }: { items: ClinicRequestItem[] }) {
     router.refresh();
   }, [router]);
 
+  const countBadge = useMemo(
+    () =>
+      items.length > 0 ? (
+        <span className="rounded-full bg-brand-600 px-2.5 py-1 text-xs font-bold text-white">
+          {items.length}
+        </span>
+      ) : null,
+    [items.length],
+  );
+
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-14 z-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">New Requests</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Propose a timeslot — the dispatcher confirms with the patient.
-            </p>
-          </div>
-          {items.length > 0 && (
-            <span className="bg-brand-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-              {items.length}
-            </span>
-          )}
-        </div>
-      </header>
+      <SetPageHeader
+        title="New Requests"
+        subtitle="Propose a timeslot — the dispatcher confirms with the patient."
+        actions={countBadge}
+      />
 
       <div className="px-8 py-8">
         {items.length === 0 ? (

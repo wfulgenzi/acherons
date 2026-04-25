@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { SetPageHeader } from "@/lib/page-header-context";
 import type { OpeningHours } from "@/db/schema";
 import { PatientForm, type PatientData } from "./PatientForm";
 import { ClinicSelector } from "./ClinicSelector";
@@ -214,15 +215,14 @@ export function NewRequestFlow({ clinics }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      {/* Page header */}
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6">
-        <h1 className="text-xl font-bold text-gray-900">New request</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          {stage === 1
+      <SetPageHeader
+        title="New request"
+        subtitle={
+          stage === 1
             ? "Step 1 — Patient information"
-            : "Step 2 — Choose clinics to dispatch to"}
-        </p>
-      </header>
+            : "Step 2 — Choose clinics to dispatch to"
+        }
+      />
 
       <div className="px-8 py-8">
         {/* Draft restore banner */}

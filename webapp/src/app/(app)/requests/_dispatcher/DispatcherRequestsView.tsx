@@ -1,5 +1,6 @@
 "use client";
 
+import { SetPageHeader } from "@/lib/page-header-context";
 import { TableList, type TableColumn } from "@/components/TableList";
 
 export type RequestRow = {
@@ -99,12 +100,10 @@ const columns: TableColumn<RequestRow>[] = [
 export function DispatcherRequestsView({ data }: { data: RequestRow[] }) {
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-14 z-10">
-        <h1 className="text-xl font-bold text-gray-900">Requests</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Most recent first. Click a request to view proposals.
-        </p>
-      </header>
+      <SetPageHeader
+        title="Requests"
+        subtitle="Most recent first. Click a request to view proposals."
+      />
 
       <div className="px-8 py-8">
         <TableList

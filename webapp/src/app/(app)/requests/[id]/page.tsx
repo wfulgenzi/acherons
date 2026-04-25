@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
 import { requestsRepo, rcaRepo, proposalsRepo } from "@/db/repositories";
+import { SetPageHeader } from "@/lib/page-header-context";
 import { ProposalsList, type ProposalItem } from "./ProposalsList";
 import { RequestClinicsMap } from "./RequestClinicsMap";
 import type { OpeningHours } from "@/db/schema";
@@ -94,17 +95,12 @@ export default async function RequestDetailPage({ params }: RouteContext) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">REQ-{shortId}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {genderLabel}
-            {req.patientAge != null ? ` · ${req.patientAge} years` : ""}
-            {" · postcode "}
-            {req.postcode}
-          </p>
-        </div>
-      </header>
+      <SetPageHeader
+        title={`REQ-${shortId}`}
+        subtitle={`${genderLabel}${
+          req.patientAge != null ? ` · ${req.patientAge} years` : ""
+        } · postcode ${req.postcode}`}
+      />
 
       <div className="px-8 py-8 space-y-6">
         <Link

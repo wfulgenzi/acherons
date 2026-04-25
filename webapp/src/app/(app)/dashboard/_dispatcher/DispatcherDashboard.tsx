@@ -1,5 +1,6 @@
 import { withRLS } from "@/db/rls";
 import { requestsRepo, proposalsRepo, bookingsRepo } from "@/db/repositories";
+import { SetPageHeader } from "@/lib/page-header-context";
 import { DispatcherStatCards } from "./DispatcherStatCards";
 import { NewProposalsList, type ProposalCardItem } from "./NewProposalsList";
 import { OpenRequestsList, type OpenRequestItem } from "./OpenRequestsList";
@@ -59,12 +60,10 @@ export async function DispatcherDashboard({ orgId, userId }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Dispatcher hub</h1>
-          <p className="text-sm text-gray-400 mt-0.5 capitalize">{dateStr}</p>
-        </div>
-      </header>
+      <SetPageHeader
+        title="Dispatcher hub"
+        subtitle={dateStr}
+      />
 
       <div className="px-8 py-8 space-y-7">
         <DispatcherStatCards

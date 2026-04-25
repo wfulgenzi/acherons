@@ -5,6 +5,7 @@ import { OrgProvider } from "@/lib/org-context";
 import { NotificationsProvider } from "@/providers";
 import { loadInitialNotifications } from "@/lib/notifications/load-initial";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
+import { PageHeaderProvider } from "@/lib/page-header-context";
 import { Sidebar } from "@/components/Sidebar";
 
 export const dynamic = "force-dynamic";
@@ -51,10 +52,12 @@ export default async function AppLayout({
         }}
       >
         <NotificationsProvider initialItems={initialNotifications}>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <AppHeaderBar />
-            <main className="min-h-0 flex-1 overflow-auto">{children}</main>
-          </div>
+          <PageHeaderProvider>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <AppHeaderBar />
+              <main className="min-h-0 flex-1 overflow-auto">{children}</main>
+            </div>
+          </PageHeaderProvider>
         </NotificationsProvider>
       </OrgProvider>
     </div>
