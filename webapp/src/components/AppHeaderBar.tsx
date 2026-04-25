@@ -33,24 +33,50 @@ export function AppHeaderBar() {
   }, [pageHeader, pathname]);
   const { items, unreadCount, markOneRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
+  const [panelClosing, setPanelClosing] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const panelId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const panelOpen = open || panelClosing;
+
+  const startClosePanel = useCallback(() => {
+    if (open) {
+      setOpen(false);
+      setPanelClosing(true);
+    }
+  }, [open]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open && !panelClosing) {
       return;
     }
     const onDown = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        startClosePanel();
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        startClosePanel();
       }
     };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, panelClosing, startClosePanel]);
 
-  const toggle = useCallback(() => setOpen((o) => !o), []);
+  const toggle = useCallback(() => {
+    if (open) {
+      setOpen(false);
+      setPanelClosing(true);
+    } else {
+      setOpen(true);
+      setPanelClosing(false);
+    }
+  }, [open]);
   const hasUnread = unreadCount > 0;
 
   const onMarkAllRead = useCallback(async () => {
@@ -64,6 +90,33 @@ export function AppHeaderBar() {
       setMarkingAll(false);
     }
   }, [markAllRead, markingAll, unreadCount]);
+
+  const onPanelAnimationEnd = useCallback(
+    (e: React.AnimationEvent<HTMLDivElement>) => {
+      if (e.currentTarget !== e.target) {
+        return;
+      }
+      if (e.animationName !== "notif-popover-out") {
+        return;
+      }
+      if (panelClosing) {
+        setPanelClosing(false);
+      }
+    },
+    [panelClosing],
+  );
+
+  // When exit animation is disabled (e.g. prefers-reduced-motion), onAnimationEnd
+  // may not run — ensure the panel can still unmount.
+  useEffect(() => {
+    if (!panelClosing) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setPanelClosing(false);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [panelClosing]);
 
   return (
     <header className="sticky top-0 z-30 min-h-14 shrink-0 border-b border-brand-200 bg-brand-50/95 backdrop-blur-sm flex items-center justify-between gap-3 px-6 py-2">
@@ -93,8 +146,8 @@ export function AppHeaderBar() {
           className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-brand-200 bg-brand-100 text-brand-600 transition-colors hover:bg-brand-vivid/10 hover:text-brand-vivid"
           title="Notifications"
           aria-label="Notifications"
-          aria-expanded={open}
-          aria-controls={open ? panelId : undefined}
+          aria-expanded={panelOpen}
+          aria-controls={panelOpen ? panelId : undefined}
           aria-haspopup="true"
         >
           <BellIcon />
@@ -106,68 +159,84 @@ export function AppHeaderBar() {
           )}
         </button>
 
-        {open && (
+        {panelOpen && (
           <div
             id={panelId}
-            className="absolute right-0 top-11 z-40 w-[min(20rem,calc(100vw-1.5rem))] max-h-80 overflow-hidden rounded-2xl border border-brand-200 bg-white text-left shadow-lg"
+            onAnimationEnd={onPanelAnimationEnd}
+            className={
+              "notif-popover absolute right-0 top-11 z-40 w-[min(22rem,calc(100vw-1.5rem))] max-h-[min(24rem,70vh)] overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-b from-white to-brand-50 text-left shadow-lg shadow-brand-800/8 ring-1 ring-brand-200/60 " +
+              (panelClosing ? "notif-popover--exit" : "notif-popover--enter")
+            }
             role="menu"
+            aria-label="Notification list"
           >
-            <div className="flex items-center justify-between gap-2 border-b border-brand-100 px-3 py-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-brand-500">
-                Notifications
-              </span>
-              {hasUnread && (
-                <button
-                  type="button"
-                  className="shrink-0 rounded-md px-2 py-0.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={markingAll}
-                  onClick={onMarkAllRead}
-                  aria-label="Mark all as read"
-                >
-                  Mark all as read
-                </button>
-              )}
+            <div className="border-b border-brand-200 bg-brand-100 px-3.5 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold tracking-tight text-brand-800">
+                  Notifications
+                </span>
+                {hasUnread && (
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-full border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-600 shadow-sm transition-all hover:border-brand-300 hover:text-brand-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={markingAll}
+                    onClick={onMarkAllRead}
+                    aria-label="Mark all as read"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
             </div>
-            <ul className="max-h-64 overflow-y-auto py-1">
+            <ul className="max-h-64 overflow-y-auto overscroll-contain p-1.5">
               {items.length === 0 ? (
                 <li
-                  className="px-3 py-4 text-sm text-gray-500"
+                  className="rounded-xl px-3 py-6 text-center text-sm text-gray-500"
                   role="presentation"
                 >
-                  No notifications yet.
+                  <p className="text-brand-600/80">You&apos;re all caught up</p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    No notifications yet
+                  </p>
                 </li>
               ) : (
                 items.map((n) => {
                   const path = getNotificationPath(n.type, n.context);
                   const unread = n.readAt == null;
                   return (
-                    <li key={n.id} role="none">
+                    <li key={n.id} role="none" className="p-0.5">
                       <Link
                         href={path}
                         onClick={() => {
                           void markOneRead(n.id);
                           setOpen(false);
+                          setPanelClosing(true);
                         }}
                         role="menuitem"
-                        className={`block px-3 py-2.5 text-sm transition-colors hover:bg-brand-50 ${
-                          unread
-                            ? "font-semibold text-brand-900"
-                            : "text-gray-600"
-                        }`}
+                        className={
+                          "group focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-brand-500 " +
+                          "block rounded-xl px-2.5 py-2.5 text-sm transition-all duration-200 ease-out " +
+                          (unread
+                            ? "bg-brand-100/30 font-semibold text-brand-900 ring-1 ring-amber-400/20 hover:bg-brand-100/70 hover:ring-amber-400/35"
+                            : "text-gray-600 ring-1 ring-transparent hover:bg-brand-100/40")
+                        }
                       >
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-start gap-2.5">
                           <span
-                            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                              unread ? "bg-amber-500" : "invisible"
-                            }`}
+                            className={
+                              "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-transform duration-200 group-hover:scale-110 " +
+                              (unread
+                                ? "bg-amber-500 shadow-sm shadow-amber-500/40"
+                                : "invisible")
+                            }
                             aria-hidden
                             title={unread ? "New" : undefined}
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="leading-tight text-brand-800">
+                            <p className="leading-tight text-brand-800 group-hover:text-brand-900">
                               {labelForNotificationType(n.type)}
                             </p>
-                            <p className="mt-0.5 text-xs font-normal text-gray-400">
+                            <p className="mt-0.5 text-xs font-medium tabular-nums text-brand-500/80">
                               {formatTime(n.createdAt)}
                             </p>
                           </div>
