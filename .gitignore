@@ -1,0 +1,2 @@
+# Local key material (e.g. Supabase JWT signing) — do not commit
+*.pem

@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
 import { requestsRepo, proposalsRepo, rcaRepo } from "@/db/repositories";
+import { createInboxNotification } from "@/lib/notifications/emit.server";
 
 const TimeslotSchema = v.object({
   start: v.pipe(v.string(), v.minLength(1)),
@@ -79,7 +80,11 @@ export async function POST(request: NextRequest) {
         notes: notes ?? null,
       });
 
-      return { id: proposal.id } as const;
+      return {
+        id: proposal.id,
+        requestId: proposal.requestId,
+        dispatcherOrgId: proposal.dispatcherOrgId,
+      } as const;
     },
   );
 
@@ -89,6 +94,11 @@ export async function POST(request: NextRequest) {
       { status: result.status },
     );
   }
+
+  await createInboxNotification(result.dispatcherOrgId, "proposal.created", {
+    requestId: result.requestId,
+    proposalId: result.id,
+  });
 
   return NextResponse.json({ id: result.id }, { status: 201 });
 }

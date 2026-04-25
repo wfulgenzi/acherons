@@ -59,18 +59,11 @@ export async function DispatcherDashboard({ orgId, userId }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dispatcher hub</h1>
           <p className="text-sm text-gray-400 mt-0.5 capitalize">{dateStr}</p>
         </div>
-        <button
-          disabled
-          className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-brand-200 bg-brand-100 text-brand-500 cursor-not-allowed"
-          title="Notifications coming soon"
-        >
-          <BellIcon />
-        </button>
       </header>
 
       <div className="px-8 py-8 space-y-7">
@@ -93,23 +86,5 @@ export async function DispatcherDashboard({ orgId, userId }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
   );
 }

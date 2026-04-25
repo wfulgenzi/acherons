@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
 import { proposalsRepo, requestsRepo, bookingsRepo } from "@/db/repositories";
+import { createInboxNotification } from "@/lib/notifications/emit.server";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -54,7 +55,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
       if (action === "refuse") {
         await proposalsRepo.refuse(tx, id);
-        return { ok: true } as const;
+        return {
+          outcome: "refused" as const,
+          clinicOrgId: proposal.clinicOrgId,
+          requestId: proposal.requestId,
+          proposalId: proposal.id,
+        };
       }
 
       // Accept: create booking + confirm the request atomically
@@ -67,7 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
 
       const firstSlot = slots[0];
-      await bookingsRepo.create(tx, {
+      const booking = await bookingsRepo.create(tx, {
         requestId: proposal.requestId,
         proposalId: proposal.id,
         dispatcherOrgId: proposal.dispatcherOrgId,
@@ -78,7 +84,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       await proposalsRepo.accept(tx, id);
       await requestsRepo.confirm(tx, proposal.requestId);
 
-      return { ok: true } as const;
+      return {
+        outcome: "accepted" as const,
+        clinicOrgId: proposal.clinicOrgId,
+        requestId: proposal.requestId,
+        bookingId: booking.id,
+      };
     },
   );
 
@@ -87,6 +98,18 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       { error: result.error },
       { status: result.status },
     );
+  }
+
+  if (result.outcome === "refused") {
+    await createInboxNotification(result.clinicOrgId, "proposal.declined", {
+      requestId: result.requestId,
+      proposalId: result.proposalId,
+    });
+  } else {
+    await createInboxNotification(result.clinicOrgId, "booking.created", {
+      requestId: result.requestId,
+      bookingId: result.bookingId,
+    });
   }
 
   return NextResponse.json({ ok: true });

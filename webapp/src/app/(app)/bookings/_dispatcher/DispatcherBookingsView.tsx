@@ -101,7 +101,7 @@ export function DispatcherBookingsView({ data, today }: Props) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-0 z-10">
+      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 sticky top-14 z-10">
         <h1 className="text-xl font-bold text-gray-900">Bookings</h1>
         <p className="text-sm text-gray-400 mt-0.5">
           Confirmed appointments across all clinics.

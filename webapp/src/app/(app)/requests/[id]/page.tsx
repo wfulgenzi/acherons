@@ -94,7 +94,7 @@ export default async function RequestDetailPage({ params }: RouteContext) {
 
   return (
     <div className="flex-1 min-h-screen">
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
         <div>
           <h1 className="text-xl font-bold text-gray-900">REQ-{shortId}</h1>
           <p className="text-sm text-gray-400 mt-0.5">
@@ -104,12 +104,6 @@ export default async function RequestDetailPage({ params }: RouteContext) {
             {req.postcode}
           </p>
         </div>
-        <button
-          disabled
-          className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-brand-200 bg-brand-100 text-gray-400 cursor-not-allowed"
-        >
-          <BellIcon />
-        </button>
       </header>
 
       <div className="px-8 py-8 space-y-6">
@@ -268,23 +262,6 @@ function EditIcon() {
     >
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-}
-function BellIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   );
 }

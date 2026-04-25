@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
 import { requestsRepo, rcaRepo } from "@/db/repositories";
+import { notifyClinicsRequestCreated } from "@/lib/notifications/emit.server";
 
 const CreateRequestSchema = v.object({
   patientGender: v.picklist(["male", "female", "other", "unknown"]),
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
       return req;
     },
   );
+
+  await notifyClinicsRequestCreated(newRequest.id, clinicIds);
 
   return NextResponse.json({ id: newRequest.id }, { status: 201 });
 }

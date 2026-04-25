@@ -5,3 +5,4 @@ export * from "./requests";
 export * from "./request-clinic-access";
 export * from "./proposals";
 export * from "./bookings";
+export * from "./notifications";

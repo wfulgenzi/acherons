@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getMembership } from "@/lib/membership";
 import { OrgProvider } from "@/lib/org-context";
+import { NotificationsProvider } from "@/providers";
+import { loadInitialNotifications } from "@/lib/notifications/load-initial";
+import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { Sidebar } from "@/components/Sidebar";
+
+export const dynamic = "force-dynamic";
 
 export default async function AppLayout({
   children,
@@ -23,6 +28,11 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
+  const initialNotifications = await loadInitialNotifications(
+    session.user.id,
+    membership.orgId,
+  );
+
   return (
     <div className="flex min-h-screen bg-brand-100">
       <Sidebar
@@ -40,7 +50,12 @@ export default async function AppLayout({
           membershipRole: membership.role,
         }}
       >
-        <main className="flex-1 overflow-auto">{children}</main>
+        <NotificationsProvider initialItems={initialNotifications}>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <AppHeaderBar />
+            <main className="min-h-0 flex-1 overflow-auto">{children}</main>
+          </div>
+        </NotificationsProvider>
       </OrgProvider>
     </div>
   );

@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/db";
+// Auth must not use the RLS-scoped `db` (app_user). With RLS enabled on
+// `user` / `session` / `account` and no policies, app_user would see no rows
+// and login would always fail with "user not found".
+import { adminDb } from "@/db";
 import * as schema from "@/db/schema";
 
 // Emails that are automatically granted isAdmin on first sign-in.
@@ -32,7 +35,7 @@ function getBaseURL() {
 
 export const auth = betterAuth({
   baseURL: getBaseURL(),
-  database: drizzleAdapter(db, {
+  database: drizzleAdapter(adminDb, {
     provider: "pg",
     schema,
   }),

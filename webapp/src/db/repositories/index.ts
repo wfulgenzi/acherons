@@ -1,3 +1,4 @@
+export * as notificationsRepo from "./notifications";
 export * as membershipsRepo from "./memberships";
 export * as requestsRepo from "./requests";
 export * as proposalsRepo from "./proposals";

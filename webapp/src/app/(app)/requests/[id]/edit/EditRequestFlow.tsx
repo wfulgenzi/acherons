@@ -58,7 +58,7 @@ export function EditRequestFlow({
   return (
     <div className="flex-1 min-h-screen">
       {/* Header */}
-      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-brand-50 border-b border-brand-200 px-8 py-6 flex items-center justify-between sticky top-14 z-10">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Edit request</h1>
           <p className="text-sm text-gray-400 mt-0.5">
