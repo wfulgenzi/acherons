@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp } from "@/lib/auth-client";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,38 +25,23 @@ export default function SignupPage() {
       name,
       email,
       password,
-      callbackURL: "/dashboard",
+      callbackURL: callbackUrl,
     });
     if (error) {
       setError(error.message ?? "Something went wrong. Please try again.");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push(callbackUrl);
     }
   }
 
   async function handleGoogleSignup() {
     setGoogleLoading(true);
-    await signIn.social({ provider: "google", callbackURL: "/dashboard" });
+    await signIn.social({ provider: "google", callbackURL: callbackUrl });
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Navbar */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-          <Link
-            href="/"
-            className="text-lg font-semibold text-gray-900 tracking-tight"
-          >
-            Acherons HS
-          </Link>
-        </div>
-      </header>
-
-      {/* Card */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-8 py-10">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
               Create an account
@@ -157,13 +144,41 @@ export default function SignupPage() {
           <p className="text-center text-sm text-gray-500 mt-6">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={
+                callbackUrl && callbackUrl !== "/dashboard"
+                  ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/login"
+              }
               className="font-medium text-blue-600 hover:text-blue-700"
             >
               Log in
             </Link>
           </p>
         </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
+          <Link
+            href="/"
+            className="text-lg font-semibold text-gray-900 tracking-tight"
+          >
+            Acherons HS
+          </Link>
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <Suspense
+          fallback={
+            <div className="w-full max-w-sm h-96 bg-white rounded-2xl border border-gray-200 animate-pulse" />
+          }
+        >
+          <SignupForm />
+        </Suspense>
       </main>
     </div>
   );

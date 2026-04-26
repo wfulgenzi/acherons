@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acherons (local)</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        width: 320px;
+        margin: 0;
+        padding: 12px;
+        font-size: 13px;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 10px;
+      }
+      button {
+        width: 100%;
+        padding: 8px 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #log {
+        margin-top: 10px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #333;
+        max-height: 200px;
+        overflow: auto;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .err {
+        color: #a40000;
+      }
+      .ok {
+        color: #0a0;
+      }
+      .status-pill {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin: 0 0 8px;
+      }
+      .status-ok {
+        background: #dcfce7;
+        color: #14532d;
+      }
+      .status-bad,
+      .status-mid,
+      .status-na {
+        background: #f1f5f9;
+        color: #334155;
+      }
+      .status-bad {
+        background: #fee2e2;
+        color: #7f1d1d;
+      }
+      .status-mid {
+        background: #fef3c7;
+        color: #78350f;
+      }
+      .row-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 8px 0 6px;
+      }
+      .row-actions button.secondary {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Acherons (local)</h1>
+    <p>
+      <span class="status-pill status-na" id="status-pill" aria-hidden="true"
+        >—</span
+      >
+    </p>
+    <p id="status-hint" style="margin: 0 0 8px; font-size: 11px; color: #555">
+    </p>
+    <p>
+      Start the webapp on
+      <code id="base-label"></code>, sign in in the connect window, then
+      exchange + store tokens.
+    </p>
+    <div class="row-actions">
+      <button type="button" id="connect">Connect (launchWebAuthFlow)</button>
+      <button type="button" class="secondary" id="open-status">
+        Open connection page
+      </button>
+      <button type="button" class="secondary" id="sign-out" title="Clear tokens stored in this extension">
+        Sign out (this extension)
+      </button>
+    </div>
+    <div id="log" aria-live="polite"></div>
+    <script src="lib.js" defer></script>
+    <script src="popup.js" defer></script>
+  </body>
+</html>

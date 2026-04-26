@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Acherons HS (local dev)",
+  "version": "0.0.1",
+  "description": "Spike: handoff + extension token (localhost only).",
+  "permissions": ["identity", "storage", "tabs"],
+  "host_permissions": ["http://localhost:3000/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Acherons (local)"
+  }
+}

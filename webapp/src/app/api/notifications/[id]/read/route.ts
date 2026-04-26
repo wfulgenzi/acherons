@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
+import {
+  isAppApiAuthError,
+  requireAppApiAuth,
+} from "@/lib/resolve-app-api-auth.server";
 import { notificationsRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -11,16 +13,12 @@ const IdParam = v.object({
   id: v.pipe(v.string(), v.uuid()),
 });
 
-export async function POST(_request: NextRequest, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(request: NextRequest, { params }: RouteContext) {
+  const apiAuth = await requireAppApiAuth(request.headers);
+  if (isAppApiAuthError(apiAuth)) {
+    return apiAuth.error;
   }
-
-  const membership = await getMembership(session.user.id);
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { userId, membership } = apiAuth;
 
   const { id: rawId } = await params;
   const idParsed = v.safeParse(IdParam, { id: rawId });
@@ -30,7 +28,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
   const { id } = idParsed.output;
 
   const rows = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
+    { userId, orgId: membership.orgId },
     (tx) => notificationsRepo.markReadByIdForOrg(tx, id, membership.orgId),
   );
 

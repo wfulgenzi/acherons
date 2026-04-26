@@ -1,0 +1,1 @@
+CREATE INDEX "extension_client_user_id_idx" ON "extension_client" USING btree ("user_id");

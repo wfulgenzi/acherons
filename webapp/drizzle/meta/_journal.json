@@ -50,6 +50,20 @@
       "when": 1777042378338,
       "tag": "0006_notifications_grants_authenticated",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777196247879,
+      "tag": "0007_tough_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777196263944,
+      "tag": "0008_narrow_epoch",
+      "breakpoints": true
     }
   ]
 }

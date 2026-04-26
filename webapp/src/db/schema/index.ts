@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./extension";
 export * from "./organisations";
 export * from "./memberships";
 export * from "./requests";

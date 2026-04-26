@@ -1,13 +1,16 @@
-import { SignJWT, decodeJwt, importPKCS8 } from "jose";
+import { createPrivateKey, type KeyObject } from "node:crypto";
+import { SignJWT, decodeJwt } from "jose";
+import { normalizeEnvPem } from "@/lib/normalize-env-pem";
 
 const TTL = "15m" as const;
 
 // Server-only env (Vercel / .env.local):
 // — Symmetric: SUPABASE_JWT_SECRET (HS256) — a signing secret from "JWT / signing keys"
 //   in the dashboard (HMAC), not the anon or service_role API keys.
-// — Asymmetric (preferred): SUPABASE_JWT_PRIVATE_KEY (PKCS#8 PEM) + SUPABASE_JWT_KID
-//   + optional SUPABASE_JWT_ALG=ES256|RS256 (default ES256). You generate the key
-//   pair, register the *public* key in Supabase, and keep the private key here.
+// — Asymmetric (preferred): SUPABASE_JWT_PRIVATE_KEY (PEM; PKCS#8 or legacy EC SEC1)
+//   + SUPABASE_JWT_KID + optional SUPABASE_JWT_ALG=ES256|RS256 (default ES256). You
+//   register the *public* key in Supabase; private key is loaded with createPrivateKey
+//   (same as extension access JWT) and passed to jose for signing.
 
 type AsymmetricAlg = "ES256" | "RS256";
 
@@ -19,26 +22,29 @@ function getIssuer() {
   return `${base}/auth/v1`;
 }
 
-function normalizePem(raw: string): string {
-  return raw.replace(/\\n/g, "\n").trim();
-}
-
 let cachedAsymmetric: {
   alg: AsymmetricAlg;
   pem: string;
-  key: Awaited<ReturnType<typeof importPKCS8>>;
+  key: KeyObject;
 } | null = null;
 
-async function getAsymmetricKey(alg: AsymmetricAlg) {
+function getAsymmetricKey(alg: AsymmetricAlg) {
   const raw = process.env.SUPABASE_JWT_PRIVATE_KEY;
   if (!raw) {
     throw new Error("SUPABASE_JWT_PRIVATE_KEY is not set");
   }
-  const pem = normalizePem(raw);
+  const pem = normalizeEnvPem(raw);
   if (cachedAsymmetric && cachedAsymmetric.alg === alg && cachedAsymmetric.pem === pem) {
     return cachedAsymmetric.key;
   }
-  const key = await importPKCS8(pem, alg);
+  let key: KeyObject;
+  try {
+    key = createPrivateKey({ key: pem, format: "pem" });
+  } catch {
+    throw new Error(
+      "SUPABASE_JWT_PRIVATE_KEY is not a valid PEM private key (use PKCS#8 or EC SEC1, same as openssl genpkey or extension JWT setup).",
+    );
+  }
   cachedAsymmetric = { alg, pem, key };
   return key;
 }
@@ -74,7 +80,7 @@ export async function mintRealtimeAccessJwt(
     if (alg !== "ES256" && alg !== "RS256") {
       throw new Error("SUPABASE_JWT_ALG must be ES256 or RS256 when using a private key");
     }
-    const key = await getAsymmetricKey(alg);
+    const key = getAsymmetricKey(alg);
     jwt = await new SignJWT(body)
       .setProtectedHeader({ alg, typ: "JWT", kid })
       .setSubject(userId)

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
+import {
+  isAppApiAuthError,
+  requireAppApiAuth,
+} from "@/lib/resolve-app-api-auth.server";
 import { requestsRepo, proposalsRepo, rcaRepo } from "@/db/repositories";
 import { createInboxNotification } from "@/lib/notifications/emit.server";
 
@@ -18,13 +20,12 @@ const CreateProposalSchema = v.object({
 });
 
 export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiAuth = await requireAppApiAuth(request.headers);
+  if (isAppApiAuthError(apiAuth)) {
+    return apiAuth.error;
   }
-
-  const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "clinic") {
+  const { userId, membership } = apiAuth;
+  if (membership.orgType !== "clinic") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
   const { requestId, proposedTimeslots, notes } = parsed.output;
 
   const result = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
+    { userId, orgId: membership.orgId },
     async (tx) => {
       const req = await requestsRepo.findOpenById(tx, requestId);
       if (!req) {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
         requestId,
         clinicOrgId: membership.orgId,
         dispatcherOrgId: req.dispatcherOrgId,
-        createdByUserId: session.user.id,
+        createdByUserId: userId,
         proposedTimeslots,
         notes: notes ?? null,
       });

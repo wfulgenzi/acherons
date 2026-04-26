@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
+import {
+  isAppApiAuthError,
+  requireAppApiAuth,
+} from "@/lib/resolve-app-api-auth.server";
 import { proposalsRepo, requestsRepo, bookingsRepo } from "@/db/repositories";
 import { createInboxNotification } from "@/lib/notifications/emit.server";
 
@@ -13,13 +15,12 @@ const ActionSchema = v.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiAuth = await requireAppApiAuth(request.headers);
+  if (isAppApiAuthError(apiAuth)) {
+    return apiAuth.error;
   }
-
-  const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") {
+  const { userId, membership } = apiAuth;
+  if (membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -34,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const { action } = parsed.output;
 
   const result = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
+    { userId, orgId: membership.orgId },
     async (tx) => {
       const proposal = await proposalsRepo.findById(tx, id);
       if (!proposal) {

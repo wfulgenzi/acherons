@@ -30,13 +30,25 @@ function LoginForm() {
       setError(error.message ?? "Invalid email or password.");
       setLoading(false);
     } else {
+      // Full navigation so the handoff sub-window (launchWebAuthFlow) gets a
+      // real document load: session cookie is visible to /extension/connect
+      // and the 302 to *.chromiumapp.org fires reliably. Client `router.push`
+      // to that URL can race the cookie / confuse the flow end.
+      if (callbackUrl.startsWith("/extension/connect")) {
+        window.location.assign(callbackUrl);
+        return;
+      }
       router.push(callbackUrl);
     }
   }
 
   async function handleGoogleLogin() {
     setGoogleLoading(true);
-    await signIn.social({ provider: "google", callbackURL: callbackUrl });
+    const callbackForOAuth =
+      callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")
+        ? callbackUrl
+        : new URL(callbackUrl, window.location.origin).toString();
+    await signIn.social({ provider: "google", callbackURL: callbackForOAuth });
   }
 
   return (
@@ -122,7 +134,11 @@ function LoginForm() {
       <p className="text-center text-sm text-brand-500 mt-6">
         Don&apos;t have an account?{" "}
         <Link
-          href="/signup"
+          href={
+            callbackUrl && callbackUrl !== "/dashboard"
+              ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
+              : "/signup"
+          }
           className="font-medium text-brand-600 hover:text-brand-vivid"
         >
           Sign up

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
 import { withRLS } from "@/db/rls";
+import {
+  isAppApiAuthError,
+  requireAppApiAuth,
+} from "@/lib/resolve-app-api-auth.server";
 import { requestsRepo, rcaRepo } from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -15,13 +17,12 @@ const UpdateRequestSchema = v.partial(
 );
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const apiAuth = await requireAppApiAuth(request.headers);
+  if (isAppApiAuthError(apiAuth)) {
+    return apiAuth.error;
   }
-
-  const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") {
+  const { userId, membership } = apiAuth;
+  if (membership.orgType !== "dispatch") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -39,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const { caseDescription, clinicIds } = parsed.output;
 
   const found = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
+    { userId, orgId: membership.orgId },
     async (tx) => {
       // RLS policy enforces dispatcher_org_id = app.org_id, so this returns
       // null if the request doesn't exist or belongs to another org

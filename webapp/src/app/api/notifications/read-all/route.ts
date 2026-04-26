@@ -1,25 +1,23 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
+import { NextRequest, NextResponse } from "next/server";
 import { withRLS } from "@/db/rls";
+import {
+  isAppApiAuthError,
+  requireAppApiAuth,
+} from "@/lib/resolve-app-api-auth.server";
 import { notificationsRepo } from "@/db/repositories";
 
 /**
  * Mark every unread notification for the current org as read.
  */
-export async function POST() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(request: NextRequest) {
+  const apiAuth = await requireAppApiAuth(request.headers);
+  if (isAppApiAuthError(apiAuth)) {
+    return apiAuth.error;
   }
-
-  const membership = await getMembership(session.user.id);
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { userId, membership } = apiAuth;
 
   const updated = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
+    { userId, orgId: membership.orgId },
     (tx) => notificationsRepo.markAllUnreadForOrg(tx, membership.orgId),
   );
 
