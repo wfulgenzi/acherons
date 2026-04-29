@@ -4,7 +4,7 @@ import type {
   CurrentMembership,
   OrgOption,
 } from "@/app/admin/users/[id]/MembershipManager";
-import { loadAdminUserDetailPage } from "@/server/admin/queries/admin-users-queries";
+import { loadAdminUserDetailPage } from "@/server/admin/users/admin-users-queries";
 
 export type LoadAdminUserDetailResult =
   | { kind: "not_found" }

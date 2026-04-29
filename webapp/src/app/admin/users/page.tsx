@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { loadAdminUsersListPageData } from "@/server/admin/load-page/load-admin-users-list-page";
+import { loadAdminUsersListPageData } from "@/server/admin/users/load-admin-users-list-page";
 import { UsersTable } from "./UsersTable";
 
 export default async function UsersPage() {

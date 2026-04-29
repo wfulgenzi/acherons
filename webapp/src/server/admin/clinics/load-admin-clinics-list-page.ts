@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ClinicRow } from "@/app/admin/clinics/ClinicsTable";
-import { loadAdminOrgListWithMemberCounts } from "@/server/admin/queries/admin-org-queries";
+import { loadAdminOrgListWithMemberCounts } from "@/server/admin/orgs/admin-org-queries";
 
 type OrgListBundle = Awaited<
   ReturnType<typeof loadAdminOrgListWithMemberCounts>

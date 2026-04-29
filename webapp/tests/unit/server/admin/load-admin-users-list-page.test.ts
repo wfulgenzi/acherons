@@ -4,11 +4,11 @@ vi.mock("@/server/admin/queries/admin-users-queries", () => ({
   loadAdminUsersListPage: vi.fn(),
 }));
 
-import { loadAdminUsersListPage } from "@/server/admin/queries/admin-users-queries";
+import { loadAdminUsersListPage } from "@/server/admin/users/admin-users-queries";
 import {
   loadAdminUsersListPageData,
   mapAdminUserListRowsToUserRows,
-} from "@/server/admin/load-page/load-admin-users-list-page";
+} from "@/server/admin/users/load-admin-users-list-page";
 
 describe("mapAdminUserListRowsToUserRows", () => {
   it("maps joined user rows to UserRow", () => {

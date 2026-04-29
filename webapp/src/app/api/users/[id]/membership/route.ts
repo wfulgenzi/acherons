@@ -5,7 +5,7 @@ import { requireAdmin, isApiError } from "@/lib/api";
 import {
   adminAssignUserToOrg,
   adminRemoveUserMembership,
-} from "@/server/admin/queries/admin-memberships-queries";
+} from "@/server/admin/memberships/admin-memberships-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

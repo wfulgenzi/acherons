@@ -4,8 +4,8 @@ vi.mock("@/server/admin/queries/admin-org-queries", () => ({
   loadAdminOrgDetailBundle: vi.fn(),
 }));
 
-import { loadAdminOrgDetailBundle } from "@/server/admin/queries/admin-org-queries";
-import { loadAdminDispatcherDetailPageData } from "@/server/admin/load-page/load-admin-dispatcher-detail-page";
+import { loadAdminOrgDetailBundle } from "@/server/admin/orgs/admin-org-queries";
+import { loadAdminDispatcherDetailPageData } from "@/server/admin/dispatchers/load-admin-dispatcher-detail-page";
 
 describe("loadAdminDispatcherDetailPageData", () => {
   const mocked = vi.mocked(loadAdminOrgDetailBundle);

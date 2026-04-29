@@ -6,7 +6,7 @@ import {
   deleteOrganisationAsAdmin,
   getOrganisationFormattedById,
   updateOrganisationFromAdminInput,
-} from "@/server/admin/queries/admin-organisations-queries";
+} from "@/server/admin/orgs/admin-organisations-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

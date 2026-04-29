@@ -4,8 +4,8 @@ vi.mock("@/server/admin/queries/admin-users-queries", () => ({
   loadAdminUserDetailPage: vi.fn(),
 }));
 
-import { loadAdminUserDetailPage } from "@/server/admin/queries/admin-users-queries";
-import { loadAdminUserDetailPageData } from "@/server/admin/load-page/load-admin-user-detail-page";
+import { loadAdminUserDetailPage } from "@/server/admin/users/admin-users-queries";
+import { loadAdminUserDetailPageData } from "@/server/admin/users/load-admin-user-detail-page";
 
 type UserDetailPayload = Awaited<ReturnType<typeof loadAdminUserDetailPage>>;
 

@@ -5,7 +5,7 @@ import { CreateOrganisationSchema } from "@acherons/contracts";
 import {
   createOrganisationFromAdminInput,
   listOrganisationsFormattedForApi,
-} from "@/server/admin/queries/admin-organisations-queries";
+} from "@/server/admin/orgs/admin-organisations-queries";
 
 // ---------------------------------------------------------------------------
 // GET /api/organisations — public

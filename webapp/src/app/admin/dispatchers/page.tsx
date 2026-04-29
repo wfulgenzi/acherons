@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
-import { loadAdminDispatchersListPageData } from "@/server/admin/load-page/load-admin-dispatchers-list-page";
+import { loadAdminDispatchersListPageData } from "@/server/admin/dispatchers/load-admin-dispatchers-list-page";
 import { DispatchersTable } from "./DispatchersTable";
 
 export default async function DispatchersPage() {

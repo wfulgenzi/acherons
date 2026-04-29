@@ -4,8 +4,8 @@ vi.mock("@/server/admin/queries/admin-org-queries", () => ({
   loadAdminOrgDetailBundle: vi.fn(),
 }));
 
-import { loadAdminOrgDetailBundle } from "@/server/admin/queries/admin-org-queries";
-import { loadAdminClinicDetailPageData } from "@/server/admin/load-page/load-admin-clinic-detail-page";
+import { loadAdminOrgDetailBundle } from "@/server/admin/orgs/admin-org-queries";
+import { loadAdminClinicDetailPageData } from "@/server/admin/clinics/load-admin-clinic-detail-page";
 
 type OrgDetailBundle = Awaited<ReturnType<typeof loadAdminOrgDetailBundle>>;
 

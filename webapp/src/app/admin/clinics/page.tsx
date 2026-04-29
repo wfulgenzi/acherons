@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
-import { loadAdminClinicsListPageData } from "@/server/admin/load-page/load-admin-clinics-list-page";
+import { loadAdminClinicsListPageData } from "@/server/admin/clinics/load-admin-clinics-list-page";
 import { ClinicsTable } from "./ClinicsTable";
 
 export default async function ClinicsPage() {

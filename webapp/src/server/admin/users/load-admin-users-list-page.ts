@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { UserRow } from "@/app/admin/users/UsersTable";
-import { loadAdminUsersListPage } from "@/server/admin/queries/admin-users-queries";
+import { loadAdminUsersListPage } from "@/server/admin/users/admin-users-queries";
 
 type ListRow = Awaited<ReturnType<typeof loadAdminUsersListPage>>[number];
 

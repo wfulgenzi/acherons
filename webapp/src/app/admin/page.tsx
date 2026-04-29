@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { loadAdminDashboardPageData } from "@/server/admin/load-page/load-admin-dashboard-page";
+import { loadAdminDashboardPageData } from "@/server/admin/dashboard/load-admin-dashboard-page";
 
 export default async function AdminDashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });

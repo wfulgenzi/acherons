@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { OrgMemberRow } from "@/components/OrgMembersTable";
-import { loadAdminOrgDetailBundle } from "@/server/admin/queries/admin-org-queries";
+import { loadAdminOrgDetailBundle } from "@/server/admin/orgs/admin-org-queries";
 import { mapMembershipRowsToOrgMemberRows } from "@/server/admin/map-org-members";
 
 export type LoadAdminDispatcherDetailResult =

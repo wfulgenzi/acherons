@@ -4,11 +4,11 @@ vi.mock("@/server/admin/queries/admin-org-queries", () => ({
   loadAdminOrgListWithMemberCounts: vi.fn(),
 }));
 
-import { loadAdminOrgListWithMemberCounts } from "@/server/admin/queries/admin-org-queries";
+import { loadAdminOrgListWithMemberCounts } from "@/server/admin/orgs/admin-org-queries";
 import {
   loadAdminDispatchersListPageData,
   mapOrgListBundleToDispatcherRows,
-} from "@/server/admin/load-page/load-admin-dispatchers-list-page";
+} from "@/server/admin/dispatchers/load-admin-dispatchers-list-page";
 
 describe("mapOrgListBundleToDispatcherRows", () => {
   it("merges member counts for dispatcher rows", () => {

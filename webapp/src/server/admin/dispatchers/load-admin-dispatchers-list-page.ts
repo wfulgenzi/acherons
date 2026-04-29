@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { DispatcherRow } from "@/app/admin/dispatchers/DispatchersTable";
-import { loadAdminOrgListWithMemberCounts } from "@/server/admin/queries/admin-org-queries";
+import { loadAdminOrgListWithMemberCounts } from "@/server/admin/orgs/admin-org-queries";
 
 type OrgListBundle = Awaited<
   ReturnType<typeof loadAdminOrgListWithMemberCounts>

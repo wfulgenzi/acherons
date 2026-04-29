@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, isApiError } from "@/lib/api";
-import { adminDeleteUserById } from "@/server/admin/queries/admin-users-queries";
+import { adminDeleteUserById } from "@/server/admin/users/admin-users-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -4,8 +4,8 @@ vi.mock("@/server/admin/queries/admin-dashboard-queries", () => ({
   loadAdminDashboardOverview: vi.fn(),
 }));
 
-import { loadAdminDashboardOverview } from "@/server/admin/queries/admin-dashboard-queries";
-import { loadAdminDashboardPageData } from "@/server/admin/load-page/load-admin-dashboard-page";
+import { loadAdminDashboardOverview } from "@/server/admin/dashboard/admin-dashboard-queries";
+import { loadAdminDashboardPageData } from "@/server/admin/dashboard/load-admin-dashboard-page";
 
 describe("loadAdminDashboardPageData", () => {
   const mocked = vi.mocked(loadAdminDashboardOverview);

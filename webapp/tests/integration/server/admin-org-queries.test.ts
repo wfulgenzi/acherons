@@ -4,7 +4,7 @@ import { organisations } from "@/db/schema";
 import {
   loadAdminOrgDetailBundle,
   loadAdminOrgListWithMemberCounts,
-} from "@/server/admin/queries/admin-org-queries";
+} from "@/server/admin/orgs/admin-org-queries";
 import { resetIntegrationDatabase } from "../helpers/test-db";
 
 describe("admin org queries", () => {

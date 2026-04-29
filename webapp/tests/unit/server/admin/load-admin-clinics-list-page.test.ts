@@ -4,11 +4,11 @@ vi.mock("@/server/admin/queries/admin-org-queries", () => ({
   loadAdminOrgListWithMemberCounts: vi.fn(),
 }));
 
-import { loadAdminOrgListWithMemberCounts } from "@/server/admin/queries/admin-org-queries";
+import { loadAdminOrgListWithMemberCounts } from "@/server/admin/orgs/admin-org-queries";
 import {
   loadAdminClinicsListPageData,
   mapOrgListBundleToClinicRows,
-} from "@/server/admin/load-page/load-admin-clinics-list-page";
+} from "@/server/admin/clinics/load-admin-clinics-list-page";
 
 describe("mapOrgListBundleToClinicRows", () => {
   it("merges member counts and maps clinic list fields", () => {

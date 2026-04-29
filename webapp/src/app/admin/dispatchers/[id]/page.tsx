@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { loadAdminDispatcherDetailPageData } from "@/server/admin/load-page/load-admin-dispatcher-detail-page";
+import { loadAdminDispatcherDetailPageData } from "@/server/admin/dispatchers/load-admin-dispatcher-detail-page";
 import { OrgMembersTable } from "@/components/OrgMembersTable";
 
 type Props = { params: Promise<{ id: string }> };

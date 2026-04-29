@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { auth } from "@/lib/auth";
-import { loadAdminUserDetailPageData } from "@/server/admin/load-page/load-admin-user-detail-page";
+import { loadAdminUserDetailPageData } from "@/server/admin/users/load-admin-user-detail-page";
 import { MembershipManager } from "./MembershipManager";
 
 type Props = { params: Promise<{ id: string }> };
