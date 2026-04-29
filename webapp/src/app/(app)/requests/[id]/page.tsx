@@ -1,23 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { db } from "@/db";
 import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
-import { withRLS } from "@/db/rls";
-import { requestsRepo, rcaRepo, proposalsRepo } from "@/db/repositories";
+import {
+  loadRequestDetailPageData,
+  type ClinicOnRequest,
+} from "@/server/requests/load-request-detail-page";
 import { SetPageHeader } from "@/lib/page-header-context";
-import { ProposalsList, type ProposalItem } from "./ProposalsList";
+import { ProposalsList } from "./ProposalsList";
 import { RequestClinicsMap } from "./RequestClinicsMap";
 import type { OpeningHours } from "@/db/schema";
-
-type ClinicOnRequest = {
-  id: string;
-  name: string;
-  address: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  openingHours: OpeningHours | null;
-};
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -28,70 +19,25 @@ export default async function RequestDetailPage({ params }: RouteContext) {
     redirect("/login");
   }
 
-  const membership = await getMembership(session.user.id);
-  if (!membership || membership.orgType !== "dispatch") {
-    redirect("/dashboard");
+  const result = await loadRequestDetailPageData(session.user.id, id);
+  if (result.kind === "redirect") {
+    redirect(result.to);
   }
-
-  const [req, clinicRows, proposalRows] = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
-    async (tx) =>
-      Promise.all([
-        requestsRepo.findByIdForDispatcher(tx, id, membership.orgId),
-        rcaRepo.findClinicsOnRequest(tx, id),
-        proposalsRepo.findByRequestId(tx, id),
-      ]),
-  );
-
-  if (!req) {
+  if (result.kind === "notFound") {
     notFound();
   }
 
-  const creator = await requestsRepo.findCreator(db, req.createdByUserId);
-
-  const clinics: ClinicOnRequest[] = clinicRows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    address: r.address ?? null,
-    latitude: r.latitude ?? null,
-    longitude: r.longitude ?? null,
-    openingHours: r.openingHours ?? null,
-  }));
-
-  const proposalItems: ProposalItem[] = proposalRows.map((r) => ({
-    id: r.proposal.id,
-    clinicName: r.clinicName,
-    status: r.proposal.status,
-    notes: r.proposal.notes,
-    proposedTimeslots: r.proposal.proposedTimeslots,
-    createdAt: r.proposal.createdAt.toISOString(),
-  }));
-
-  const pendingCount = proposalItems.filter(
-    (p) => p.status === "pending",
-  ).length;
-  const shortId = req.id.slice(0, 8).toUpperCase();
-  const creatorLabel = creator?.name || creator?.email || "Unknown";
-  const createdLabel =
-    req.createdAt.toLocaleDateString("en-GB", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }) +
-    ", " +
-    req.createdAt.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-  const genderLabel =
-    req.patientGender === "male"
-      ? "Male"
-      : req.patientGender === "female"
-        ? "Female"
-        : req.patientGender === "other"
-          ? "Other"
-          : "Unknown";
+  const {
+    requestId,
+    req,
+    clinics,
+    proposalItems,
+    pendingCount,
+    shortId,
+    creatorLabel,
+    createdLabel,
+    genderLabel,
+  } = result;
 
   return (
     <div className="flex-1 min-h-screen">
@@ -121,7 +67,7 @@ export default async function RequestDetailPage({ params }: RouteContext) {
             </div>
             {req.status === "open" && (
               <Link
-                href={`/requests/${id}/edit`}
+                href={`/requests/${requestId}/edit`}
                 className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-brand-800 border border-brand-200 hover:border-brand-300 rounded-xl px-3 py-2 transition-colors shrink-0"
               >
                 <EditIcon />

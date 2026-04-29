@@ -1,17 +1,10 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { adminDb, asAdminDb } from "@/db";
-import { adminOrgsRepo, adminUsersRepo } from "@/db/repositories";
-import {
-  MembershipManager,
-  type CurrentMembership,
-  type OrgOption,
-} from "./MembershipManager";
-
-const adb = asAdminDb(adminDb);
 import { Badge } from "@/components/ui/Badge";
+import { auth } from "@/lib/auth";
+import { loadAdminUserDetailPageData } from "@/server/admin/load-page/load-admin-user-detail-page";
+import { MembershipManager } from "./MembershipManager";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -23,29 +16,13 @@ export default async function UserDetailPage({ params }: Props) {
     redirect("/dashboard");
   }
 
-  const [u, membershipRow, allOrgs] = await Promise.all([
-    adminUsersRepo.findById(adb, id),
-    adminUsersRepo.findMembershipWithOrgForUser(adb, id),
-    adminOrgsRepo.findAllSummary(adb),
-  ]);
+  const detail = await loadAdminUserDetailPageData(id);
 
-  if (!u) {
+  if (detail.kind === "not_found") {
     notFound();
   }
-  const membership: CurrentMembership | null = membershipRow?.organisations
-    ? {
-        orgId: membershipRow.organisations.id,
-        orgName: membershipRow.organisations.name,
-        orgType: membershipRow.organisations.type,
-        role: membershipRow.memberships.role,
-      }
-    : null;
 
-  const orgOptions: OrgOption[] = allOrgs.map((o) => ({
-    id: o.id,
-    name: o.name,
-    type: o.type,
-  }));
+  const { user: u, membership, orgOptions } = detail;
 
   return (
     <div className="p-8 max-w-2xl">

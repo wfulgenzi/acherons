@@ -7,7 +7,33 @@ This document records **recommendations**, **decisions**, and a **task breakdown
 ## Context
 
 - **App:** Next.js 16 (App Router), React 19, Drizzle + Postgres, Supabase (auth / realtime in places), server modules colocated with product.
-- **Today:** No Vitest/Jest/Playwright in `webapp/package.json` yet; no `*.test.*` files. Greenfield for test tooling.
+- **Today:** **Vitest** in `webapp/` (unit tests; Playwright not added yet). See `webapp/package.json` `engines.node` and **Node.js version (Vitest 4)** below.
+
+---
+
+## Test directory layout (`webapp/`)
+
+| Location | Purpose |
+|----------|---------|
+| **`tests/unit/`** | Fast unit tests. **Mirror `src/`**: same subfolders and source basename + **`.test.ts`** or **`.test.tsx`**. Example: `src/server/bookings/load-bookings-page.ts` → `tests/unit/server/bookings/load-bookings-page.test.ts`. |
+| **`tests/integration/`** | Tests that need **Docker Compose Postgres**, **migrations**, **seed/teardown**, or asserting **real DB in/out** (including RLS). Same mirror optional; prefer clear names and shared harness imports. |
+| **`tests/stubs/`** | Build/test stubs (e.g. `server-only` for Vitest). Not a mirror of `src/`. |
+
+Shared fixtures/helpers can live in **`tests/unit/helpers/`** (or **`tests/integration/helpers/`**) when multiple suites need them — you do **not** need one giant `tests/unit/server/bookings.ts`; mirroring keeps navigation and ownership obvious.
+
+---
+
+## Node.js version (Vitest 4 / Vite 8)
+
+**Vitest 4** pulls **Vite 8** and **Rolldown**. On **older Node** (e.g. **20.12.x**), `yarn test` can fail at startup with:
+
+`TypeError [ERR_INVALID_ARG_VALUE]: ... styleText ... Received [ 'underline', 'gray' ]`
+
+That happens because Rolldown calls Node’s `util.styleText` with **multiple modifiers**; Node versions that only accept a **single** format throw before any tests run. Some transitive deps also declare **`engines.node >= 20.19.0`**, so **`yarn install`** may refuse on older Node unless you fix the Node version.
+
+**Fix:** Use the Node version in **`webapp/.nvmrc`** (`nvm use` in `webapp/`) or any **>= 20.19** (and preferably **22.x** if you still see Rolldown issues). **`package.json`** lists a minimum **`engines.node`** — treat it as authoritative for CI and local dev.
+
+Downgrading Vitest/Vite was only a **temporary workaround** when the shell used an older Node; it is **not** required if Node meets `engines` and `.nvmrc`.
 
 ---
 
@@ -88,30 +114,32 @@ Use this as an implementation checklist; reorder subtasks if dependencies demand
 
 | ID | Task | Status | Notes |
 |----|------|--------|--------|
-| A1 | Add **Vitest** (+ coverage driver if desired), `vitest.config.ts`, scripts `test` / `test:watch` in `webapp/package.json`. | todo | Use `@/` alias consistent with Next/tsconfig paths. |
-| A2 | Split **environments**: `vitest.config` → **`environment: 'node'`** default; optional **`environmentMatchGlobs`** for `**/*.tsx` → `jsdom`. | todo | Or explicit file suffixes (`*.node.test.ts` vs `*.dom.test.tsx`). |
-| A3 | Add **`@testing-library/react`** + **`@testing-library/user-event`** + **`jsdom`** for component tests. | todo | |
-| A4 | Document in this README **how to run** tests locally (`yarn test`, single file, CI parity). | todo | |
+| A1 | Add **Vitest** (+ coverage driver if desired), `vitest.config.ts`, scripts `test` / `test:watch` in `webapp/package.json`. | done | Use `@/` alias consistent with Next/tsconfig paths. **`yarn test`** runs **`tests/unit`** only; **`yarn test:integration`** → **`tests/integration`**. |
+| A2 | Split **environments**: **`environment: 'node'`** default (Vitest 4). **Vitest 4 removed `environmentMatchGlobs`** — for RTL/DOM, put **`// @vitest-environment jsdom`** at the top of a `*.test.tsx` file (or use Vitest **projects** if we need many DOM suites). | done | |
+| A3 | Add **`@testing-library/react`** + **`@testing-library/user-event`** + **`jsdom`** for component tests. | done | |
+| A4 | Document in this README **how to run** tests locally (`yarn test`, single file, CI parity). | done | **Unit:** `cd webapp && yarn test`. **Integration:** copy **`.env.test.example`** → **`.env.test.local`**, run **`yarn db:test:up`** then **`yarn db:test:prepare`**, then **`yarn test:integration`**. Single file: `yarn vitest run path/to/file.test.ts`. |
 
 ### Phase B — Database integration harness
 
 | ID | Task | Status | Notes |
 |----|------|--------|--------|
-| B1 | Add **`docker-compose`** (or Makefile) for **test Postgres** image + port; document env var **`DATABASE_URL`** for tests. | todo | |
-| B2 | Script: **migrate** test DB (`drizzle-kit migrate` or project migrate script) before integration suite. | todo | |
-| B3 | Script: **seed** minimal reference data or truncate helpers for teardown. | todo | Align with isolation strategy (B4). |
-| B4 | Choose and implement **isolation strategy** (truncate vs transaction vs prefixed IDs). Document tradeoffs here. | todo | |
-| B5 | Wire **`yarn test:integration`** (or Vitest **project** `integration`) that runs only DB tests against Docker DB. | todo | CI must start Postgres service before this job. |
-| B6 | **RLS test DB user:** Ensure integration/RLS tests use **`DATABASE_URL`** as the **same class of role** as production **`db`** (RLS enforced). Document that **`adminDb`-only** tests never substitute for RLS coverage. | todo | Mirror grants/Memberships for `app_user` in test DB as in prod. |
-| B7 | **RLS behavioral suite:** Seed two tenants/users; for one repo + `withRLS`, assert **cross-tenant isolation** (and at least one **positive** “sees own rows” case). Start with the highest-risk table (e.g. requests/bookings). | todo | Lives under e.g. `src/db/repositories/__tests__/…` or `src/server/.../integration` — pick one convention. |
+| B1 | Add **`docker-compose`** (or Makefile) for **test Postgres** image + port; document env var **`DATABASE_URL`** for tests. | done | **`webapp/docker-compose.test.yml`** — port **55432**, DB **`acherons_test`**. |
+| B2 | Script: **migrate** test DB (`drizzle-kit migrate` or project migrate script) before integration suite. | done | **`yarn db:test:migrate`** (loads **`.env.test.local`** via dotenv-cli). |
+| B3 | Script: **seed** minimal reference data or truncate helpers for teardown. | done | **`tests/integration/helpers/test-db.ts`**: **`truncateAllPublicTables`**, **`resetIntegrationDatabase`**, **`seedMinimalBaseline`** (placeholder until B7). |
+| B4 | Choose and implement **isolation strategy** (truncate vs transaction vs prefixed IDs). Document tradeoffs here. | done | **Truncate** all public tables except **`__drizzle_migrations`** via **admin** URL between tests; **`vitest.integration.config.ts`** uses **`singleFork`** to avoid races. |
+| B5 | Wire **`yarn test:integration`** (or Vitest **project** `integration`) that runs only DB tests against Docker DB. | done | **`vitest.integration.config.ts`** + **`tests/integration/setup.ts`** loads **`.env.test.local`**. |
+| B6 | **RLS test DB user:** Ensure integration/RLS tests use **`DATABASE_URL`** as the **same class of role** as production **`db`** (RLS enforced). Document that **`adminDb`-only** tests never substitute for RLS coverage. | done | **`scripts/db-test-grants.sql`**: role **`acherons_app`**. **`DATABASE_ADMIN_URL`** = migrate / truncate / seed; **`DATABASE_URL`** = **`db`** + **`withRLS`** for RLS tests. |
+| B7 | **RLS behavioral suite:** Seed two tenants/users; for one repo + `withRLS`, assert **cross-tenant isolation** (and at least one **positive** “sees own rows” case). Start with the highest-risk table (e.g. requests/bookings). | done | **`src/server/*/\*-rls-queries.ts`** centralise `withRLS` + repos (no `server-only`). **`tests/integration/\*-rls.test.ts`** call those modules + **`DATABASE_URL`**. Seeds: **`dispatcher-rls-seed.ts`**, **`booking-proposal-rls-seed.ts`**. |
+
+**First-time local:** `cp .env.test.example .env.test.local` → **`yarn db:test:up`** → **`yarn db:test:prepare`** → **`yarn test:integration`**. **`yarn db:test:down`** tears down the compose stack (**`-v`** clears data).
 
 ### Phase C — First vertical slice (pattern establishment)
 
 | ID | Task | Status | Notes |
 |----|------|--------|--------|
-| C1 | Pick one domain (e.g. **bookings**): extract page data logic from `app/.../page.tsx` into **`src/server/bookings/`** (name reflects domain), returning a **discriminated union** (`redirect` vs `ok` payloads). Thin `page.tsx` only. | todo | Matches refactoring discussed for bookings. |
-| C2 | Add **Vitest** tests for that loader module with **mocked** session/membership/repos (fast unit tests). | todo | |
-| C3 | Add **integration tests** for **`bookingsRepo`** (or equivalent) against Docker Postgres **without** mocking SQL: (a) optional **admin** smoke “SQL shape” if useful; (b) **required** **`withRLS` + `db`** cases per **B7** so tenant isolation is covered. | todo | Depends on Phase B. |
+| C1 | Pick one domain (e.g. **bookings**): extract page data logic from `app/.../page.tsx` into **`src/server/bookings/`** (name reflects domain), returning a **discriminated union** (`redirect` vs `ok` payloads). Thin `page.tsx` only. | done | Extended across bookings, requests, proposals, dashboard, etc. |
+| C2 | Add **Vitest** tests for that loader module with **mocked** session/membership/repos (fast unit tests). | done | See **`tests/unit/server/`**. |
+| C3 | Add **integration tests** for **`bookingsRepo`** (or equivalent) against Docker Postgres **without** mocking SQL: (a) optional **admin** smoke “SQL shape” if useful; (b) **required** **`withRLS` + `db`** cases per **B7** so tenant isolation is covered. | done | Uses **`bookings-rls-queries`** / **`requests-rls-queries`** / **`proposals-rls-queries`** / **`dashboard-rls-queries`** — same surface as server loaders. |
 
 ### Phase D — API routes
 
@@ -164,8 +192,9 @@ Answer these when you can; update this section so the tasks stay unblocked.
 ## Related paths
 
 - Feature matrix (web push / extension): `tasks/extension_web_push/README.md`
-- App source: `webapp/src/` (`app/`, `lib/`, future `server/`)
+- App source: `webapp/src/` (`app/`, `lib/`, `server/`)
 - RLS helper + connections: `webapp/src/db/rls.ts`, `webapp/src/db/index.ts` (`db` vs `adminDb`)
+- **RLS query modules** (shared by **`src/server/*/load-*.ts`** and **`tests/integration/`**): `webapp/src/server/rls-context.ts`, `webapp/src/server/requests/requests-rls-queries.ts`, `webapp/src/server/bookings/bookings-rls-queries.ts`, `webapp/src/server/proposals/proposals-rls-queries.ts`, `webapp/src/server/dashboard/dashboard-rls-queries.ts`
 
 ---
 

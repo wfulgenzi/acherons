@@ -2,7 +2,7 @@ import "server-only";
 
 import { eq, count } from "drizzle-orm";
 import type { AdminDb } from "../index";
-import { memberships, organisations, user } from "../schema";
+import { memberships, user } from "../schema";
 
 /** Admin: list all members of an org with their user info. */
 export async function findByOrgId(tx: AdminDb, orgId: string) {

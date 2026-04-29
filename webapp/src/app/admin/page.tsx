@@ -1,10 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { adminDb, asAdminDb } from "@/db";
-import { adminDashboardRepo } from "@/db/repositories";
-
-const adb = asAdminDb(adminDb);
+import { loadAdminDashboardPageData } from "@/server/admin/load-page/load-admin-dashboard-page";
 
 export default async function AdminDashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -13,7 +10,7 @@ export default async function AdminDashboardPage() {
   }
 
   const { userCount, clinicCount, dispatcherCount } =
-    await adminDashboardRepo.getOverviewCounts(adb);
+    await loadAdminDashboardPageData();
 
   return (
     <div className="p-8">

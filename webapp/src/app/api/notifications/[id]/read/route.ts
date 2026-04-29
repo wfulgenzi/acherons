@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { notificationsRepo } from "@/db/repositories";
+import { markNotificationReadByIdForOrg } from "@/server/notifications/notifications-rls-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -27,9 +26,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
   const { id } = idParsed.output;
 
-  const rows = await withRLS(
+  const rows = await markNotificationReadByIdForOrg(
     { userId, orgId: membership.orgId },
-    (tx) => notificationsRepo.markReadByIdForOrg(tx, id, membership.orgId),
+    id,
   );
 
   if (rows.length === 0) {

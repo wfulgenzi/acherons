@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, asAdminDb } from "@/db";
-import { adminUsersRepo } from "@/db/repositories";
 import { requireAdmin, isApiError } from "@/lib/api";
-
-const adb = asAdminDb(adminDb);
+import { adminDeleteUserById } from "@/server/admin/queries/admin-users-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -28,12 +25,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const u = await adminUsersRepo.findById(adb, id);
-  if (!u) {
+  const outcome = await adminDeleteUserById(id);
+  if (!outcome.ok) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
-
-  await adminUsersRepo.deleteById(adb, id);
 
   return new NextResponse(null, { status: 204 });
 }

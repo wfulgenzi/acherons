@@ -1,0 +1,22 @@
+# Local Postgres for integration tests. Use from webapp/: `yarn db:test:up`
+#
+# Port 55432 avoids clashing with a default local Postgres on 5432.
+# Copy .env.test.example → .env.test.local and run `yarn db:test:prepare` once
+# the container is healthy.
+
+services:
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: acherons_postgres_test
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: acherons_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d acherons_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 3s

@@ -1,14 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
-import { withRLS } from "@/db/rls";
-import { bookingsRepo } from "@/db/repositories";
-import {
-  DispatcherBookingsView,
-  type BookingRow,
-} from "./_dispatcher/DispatcherBookingsView";
+import { loadBookingsPageData } from "@/server/bookings/load-bookings-page";
+import { DispatcherBookingsView } from "./_dispatcher/DispatcherBookingsView";
 import { ClinicBookingsView } from "./_clinic/ClinicBookingsView";
-import type { ClinicBookingItem } from "./_clinic/types";
 
 export default async function BookingsPage() {
   const session = await getSession();
@@ -16,49 +10,16 @@ export default async function BookingsPage() {
     redirect("/login");
   }
 
-  const membership = await getMembership(session.user.id);
-  if (!membership) {
-    redirect("/onboarding");
+  const result = await loadBookingsPageData(session.user.id);
+  if (result.kind === "redirect") {
+    redirect(result.to);
   }
 
-  if (membership.orgType === "clinic") {
-    const rows = await withRLS(
-      { userId: session.user.id, orgId: membership.orgId },
-      (tx) => bookingsRepo.findByClinic(tx, membership.orgId),
-    );
+  const today = result.todayIso;
 
-    const items: ClinicBookingItem[] = rows.map((r) => ({
-      id: r.id,
-      requestId: r.requestId,
-      confirmedStart: r.confirmedStart.toISOString(),
-      confirmedEnd: r.confirmedEnd.toISOString(),
-      patientAge: r.patientAge,
-      patientGender: r.patientGender,
-      caseDescription: r.caseDescription,
-    }));
-
-    return (
-      <ClinicBookingsView items={items} today={new Date().toISOString()} />
-    );
+  if (result.kind === "clinic") {
+    return <ClinicBookingsView items={result.items} today={today} />;
   }
 
-  const rows = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
-    (tx) => bookingsRepo.findByDispatcher(tx, membership.orgId),
-  );
-
-  const data: BookingRow[] = rows.map((r) => ({
-    id: r.id,
-    requestId: r.requestId,
-    confirmedStart: r.confirmedStart.toISOString(),
-    confirmedEnd: r.confirmedEnd.toISOString(),
-    patientAge: r.patientAge,
-    patientGender: r.patientGender,
-    caseDescription: r.caseDescription,
-    clinicName: r.clinicName,
-  }));
-
-  return (
-    <DispatcherBookingsView data={data} today={new Date().toISOString()} />
-  );
+  return <DispatcherBookingsView data={result.data} today={today} />;
 }

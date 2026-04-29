@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { notificationsRepo } from "@/db/repositories";
+import { markAllUnreadNotificationsForOrg } from "@/server/notifications/notifications-rls-queries";
 
 /**
  * Mark every unread notification for the current org as read.
@@ -16,10 +15,10 @@ export async function POST(request: NextRequest) {
   }
   const { userId, membership } = apiAuth;
 
-  const updated = await withRLS(
-    { userId, orgId: membership.orgId },
-    (tx) => notificationsRepo.markAllUnreadForOrg(tx, membership.orgId),
-  );
+  const updated = await markAllUnreadNotificationsForOrg({
+    userId,
+    orgId: membership.orgId,
+  });
 
   return NextResponse.json({ ok: true, updated });
 }

@@ -4,12 +4,8 @@ import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { withRLS } from "@/db/rls";
-import {
-  assertActiveExtensionClientForUser,
-  upsertWebPushSubscriptionForClient,
-  WebPushClientForbiddenError,
-} from "@/lib/web-push/upsert-subscription.server";
+import { WebPushClientForbiddenError } from "@/lib/web-push/upsert-subscription.server";
+import { upsertExtensionPushSubscription } from "@/server/extension/extension-rls-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -56,16 +52,10 @@ export async function POST(request: NextRequest) {
   const { endpoint, keys } = parsed.output;
 
   try {
-    const { id } = await withRLS({ userId }, async (tx) => {
-      await assertActiveExtensionClientForUser(tx, {
-        clientId: extensionClientId,
-      });
-      return upsertWebPushSubscriptionForClient(tx, {
-        userId,
-        clientId: extensionClientId,
-        endpoint,
-        keys,
-      });
+    const { id } = await upsertExtensionPushSubscription(userId, {
+      clientId: extensionClientId,
+      endpoint,
+      keys,
     });
     return NextResponse.json({ ok: true, id });
   } catch (e) {

@@ -1,17 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getMembership } from "@/lib/membership";
-import { withRLS } from "@/db/rls";
-import { proposalsRepo } from "@/db/repositories";
-import {
-  ClinicProposalsView,
-  type ProposalRow,
-} from "./_clinic/ClinicProposalsView";
-import {
-  DispatcherProposalsView,
-  type DispatcherProposalRow,
-} from "./_dispatcher/DispatcherProposalsView";
-import type { ProposedTimeslots } from "@/db/schema";
+import { loadProposalsPageData } from "@/server/proposals/load-proposals-page";
+import { ClinicProposalsView } from "./_clinic/ClinicProposalsView";
+import { DispatcherProposalsView } from "./_dispatcher/DispatcherProposalsView";
 
 export default async function ProposalsPage() {
   const session = await getSession();
@@ -19,58 +10,14 @@ export default async function ProposalsPage() {
     redirect("/login");
   }
 
-  const membership = await getMembership(session.user.id);
-  if (!membership) {
-    redirect("/onboarding");
+  const result = await loadProposalsPageData(session.user.id);
+  if (result.kind === "redirect") {
+    redirect(result.to);
   }
 
-  if (membership.orgType === "clinic") {
-    const rows = await withRLS(
-      { userId: session.user.id, orgId: membership.orgId },
-      (tx) => proposalsRepo.findByClinic(tx, membership.orgId),
-    );
-
-    const data: ProposalRow[] = rows.map((r) => {
-      const slots = r.proposedTimeslots as ProposedTimeslots | null;
-      const first = slots?.[0] ?? null;
-      return {
-        id: r.id,
-        requestShortId: r.requestId.slice(0, 4).toUpperCase(),
-        patientAge: r.patientAge,
-        patientGender: r.patientGender,
-        caseDescription: r.caseDescription,
-        proposedStart: first?.start ?? null,
-        proposedEnd: first?.end ?? null,
-        status: r.status,
-        submittedAt: r.createdAt.toISOString(),
-      };
-    });
-
-    return <ClinicProposalsView data={data} />;
+  if (result.kind === "clinic") {
+    return <ClinicProposalsView data={result.data} />;
   }
 
-  const rows = await withRLS(
-    { userId: session.user.id, orgId: membership.orgId },
-    (tx) => proposalsRepo.findByDispatcher(tx, membership.orgId),
-  );
-
-  const data: DispatcherProposalRow[] = rows.map((r) => {
-    const slots = r.proposedTimeslots as ProposedTimeslots | null;
-    const first = slots?.[0] ?? null;
-    return {
-      id: r.id,
-      requestId: r.requestId,
-      requestShortId: r.requestId.slice(0, 4).toUpperCase(),
-      patientAge: r.patientAge,
-      patientGender: r.patientGender,
-      caseDescription: r.caseDescription,
-      clinicName: r.clinicName,
-      proposedStart: first?.start ?? null,
-      proposedEnd: first?.end ?? null,
-      status: r.status,
-      submittedAt: r.createdAt.toISOString(),
-    };
-  });
-
-  return <DispatcherProposalsView data={data} />;
+  return <DispatcherProposalsView data={result.data} />;
 }

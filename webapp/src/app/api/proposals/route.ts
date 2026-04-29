@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { requestsRepo, proposalsRepo, rcaRepo } from "@/db/repositories";
 import { createInboxNotification } from "@/lib/notifications/emit.server";
+import { createClinicProposalForRequest } from "@/server/proposals/proposals-rls-queries";
 
 const TimeslotSchema = v.object({
   start: v.pipe(v.string(), v.minLength(1)),
@@ -40,52 +39,13 @@ export async function POST(request: NextRequest) {
 
   const { requestId, proposedTimeslots, notes } = parsed.output;
 
-  const result = await withRLS(
+  const result = await createClinicProposalForRequest(
     { userId, orgId: membership.orgId },
-    async (tx) => {
-      const req = await requestsRepo.findOpenById(tx, requestId);
-      if (!req) {
-        return {
-          error: "Request not found or not open.",
-          status: 404,
-        } as const;
-      }
-
-      const access = await rcaRepo.findByRequestAndClinic(
-        tx,
-        requestId,
-        membership.orgId,
-      );
-      if (!access) {
-        return { error: "Forbidden", status: 403 } as const;
-      }
-
-      const existing = await proposalsRepo.findByRequestAndClinic(
-        tx,
-        requestId,
-        membership.orgId,
-      );
-      if (existing) {
-        return {
-          error: "You have already submitted a proposal for this request.",
-          status: 409,
-        } as const;
-      }
-
-      const proposal = await proposalsRepo.create(tx, {
-        requestId,
-        clinicOrgId: membership.orgId,
-        dispatcherOrgId: req.dispatcherOrgId,
-        createdByUserId: userId,
-        proposedTimeslots,
-        notes: notes ?? null,
-      });
-
-      return {
-        id: proposal.id,
-        requestId: proposal.requestId,
-        dispatcherOrgId: proposal.dispatcherOrgId,
-      } as const;
+    {
+      requestId,
+      proposedTimeslots,
+      notes: notes ?? null,
+      createdByUserId: userId,
     },
   );
 

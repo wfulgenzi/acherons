@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { requestsRepo, rcaRepo } from "@/db/repositories";
+import { patchDispatcherRequestForOrg } from "@/server/requests/requests-rls-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -39,28 +38,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const { caseDescription, clinicIds } = parsed.output;
 
-  const found = await withRLS(
+  const found = await patchDispatcherRequestForOrg(
     { userId, orgId: membership.orgId },
-    async (tx) => {
-      // RLS policy enforces dispatcher_org_id = app.org_id, so this returns
-      // null if the request doesn't exist or belongs to another org
-      const req = await requestsRepo.findByIdForDispatcher(
-        tx,
-        id,
-        membership.orgId,
-      );
-      if (!req) {
-        return false;
-      }
-
-      if (caseDescription !== undefined) {
-        await requestsRepo.updateCaseDescription(tx, id, caseDescription);
-      }
-      if (clinicIds !== undefined) {
-        await rcaRepo.replaceAll(tx, id, membership.orgId, clinicIds);
-      }
-      return true;
-    },
+    id,
+    { caseDescription, clinicIds },
   );
 
   if (!found) {

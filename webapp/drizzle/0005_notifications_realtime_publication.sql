@@ -1,9 +1,17 @@
 -- Stream Postgres changes for `notifications` via Realtime (same as toggling the table
 -- in Dashboard → Database → Publications → supabase_realtime). Idempotent.
+-- No-op when the `supabase_realtime` publication does not exist (vanilla Postgres).
 DO
 $$
   BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
+      SELECT
+        1
+      FROM
+        pg_publication
+      WHERE
+        pubname = 'supabase_realtime'
+    ) AND NOT EXISTS (
       SELECT
         1
       FROM

@@ -1,11 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { adminDb, asAdminDb } from "@/db";
-import { adminUsersRepo } from "@/db/repositories";
-import { UsersTable, type UserRow } from "./UsersTable";
-
-const adb = asAdminDb(adminDb);
+import { loadAdminUsersListPageData } from "@/server/admin/load-page/load-admin-users-list-page";
+import { UsersTable } from "./UsersTable";
 
 export default async function UsersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -13,18 +10,7 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  const rows = await adminUsersRepo.listWithMemberships(adb);
-
-  const data: UserRow[] = rows.map((r) => ({
-    id: r.user.id,
-    name: r.user.name,
-    email: r.user.email,
-    isAdmin: r.user.isAdmin ?? false,
-    orgName: r.organisations?.name ?? null,
-    orgType: r.organisations?.type ?? null,
-    membershipRole: r.memberships?.role ?? null,
-    createdAt: r.user.createdAt.toISOString(),
-  }));
+  const { rows: data } = await loadAdminUsersListPageData();
 
   return (
     <div className="p-8">

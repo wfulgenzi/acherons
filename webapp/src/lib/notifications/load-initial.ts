@@ -1,5 +1,4 @@
-import { withRLS } from "@/db/rls";
-import { notificationsRepo } from "@/db/repositories";
+import { findRecentNotificationsForOrg } from "@/server/notifications/notifications-rls-queries";
 import type { NotificationListItem } from "./notification-list";
 
 const DEFAULT_LIMIT = 10;
@@ -28,8 +27,9 @@ export async function loadInitialNotifications(
   orgId: string,
   limit = DEFAULT_LIMIT,
 ): Promise<NotificationListItem[]> {
-  const rows = await withRLS({ userId, orgId }, (tx) =>
-    notificationsRepo.findRecentForOrg(tx, orgId, limit),
+  const rows = await findRecentNotificationsForOrg(
+    { userId, orgId },
+    limit,
   );
   return rows.map((r) => ({
     id: r.id,

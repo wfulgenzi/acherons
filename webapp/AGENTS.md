@@ -1,4 +1,6 @@
-Always use `yarn` for all installations in this folder. You can also use `nvm use` in this folder to ensure you are using the correct node version before any installations.
+# Running scripts in the terminal
+
+- after cd'ing into the project directory, always make sure to run `nvm use` to select the right version of Node
 
 <!-- BEGIN:nextjs-agent-rules -->
 

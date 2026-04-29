@@ -2,14 +2,8 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { adminDb, asAdminDb } from "@/db";
-import { adminMembershipsRepo, adminOrgsRepo } from "@/db/repositories";
-import {
-  OrgMembersTable,
-  type OrgMemberRow,
-} from "@/components/OrgMembersTable";
-
-const adb = asAdminDb(adminDb);
+import { loadAdminClinicDetailPageData } from "@/server/admin/load-page/load-admin-clinic-detail-page";
+import { OrgMembersTable } from "@/components/OrgMembersTable";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -21,24 +15,13 @@ export default async function ClinicDetailPage({ params }: Props) {
     redirect("/dashboard");
   }
 
-  const [row, memberRows] = await Promise.all([
-    adminOrgsRepo.findById(adb, id),
-    adminMembershipsRepo.findByOrgId(adb, id),
-  ]);
+  const detail = await loadAdminClinicDetailPageData(id);
 
-  if (!row || row.organisations.type !== "clinic") {
+  if (detail.kind === "not_found") {
     notFound();
   }
 
-  const { organisations: org, clinic_profiles: profile } = row;
-
-  const members: OrgMemberRow[] = memberRows.map((m) => ({
-    userId: m.userId,
-    name: m.name,
-    email: m.email,
-    role: m.role,
-    joinedAt: m.joinedAt.toISOString(),
-  }));
+  const { orgName, orgCreatedAt, profile, members } = detail;
 
   return (
     <div className="p-8 max-w-2xl">
@@ -49,15 +32,15 @@ export default async function ClinicDetailPage({ params }: Props) {
         >
           ← Back to clinics
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-3">{org.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mt-3">{orgName}</h1>
       </div>
 
       <div className="space-y-4">
         <InfoCard title="Details">
-          <InfoRow label="Name" value={org.name} />
+          <InfoRow label="Name" value={orgName} />
           <InfoRow
             label="Created"
-            value={org.createdAt.toLocaleDateString("en-GB", {
+            value={orgCreatedAt.toLocaleDateString("en-GB", {
               day: "numeric",
               month: "long",
               year: "numeric",

@@ -3,11 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
-import { adminDb, asAdminDb } from "@/db";
-import { adminMembershipsRepo, adminOrgsRepo } from "@/db/repositories";
-import { DispatchersTable, type DispatcherRow } from "./DispatchersTable";
-
-const adb = asAdminDb(adminDb);
+import { loadAdminDispatchersListPageData } from "@/server/admin/load-page/load-admin-dispatchers-list-page";
+import { DispatchersTable } from "./DispatchersTable";
 
 export default async function DispatchersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -15,21 +12,7 @@ export default async function DispatchersPage() {
     redirect("/dashboard");
   }
 
-  const [rows, memberCounts] = await Promise.all([
-    adminOrgsRepo.findAllByType(adb, "dispatch"),
-    adminMembershipsRepo.memberCountsByOrg(adb),
-  ]);
-
-  const countMap = Object.fromEntries(
-    memberCounts.map((r) => [r.orgId, r.count]),
-  );
-
-  const data: DispatcherRow[] = rows.map((r) => ({
-    id: r.organisations.id,
-    name: r.organisations.name,
-    memberCount: countMap[r.organisations.id] ?? 0,
-    createdAt: r.organisations.createdAt.toISOString(),
-  }));
+  const { rows: data } = await loadAdminDispatchersListPageData();
 
   return (
     <div className="p-8">

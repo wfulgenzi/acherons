@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { adminDb, asAdminDb } from "@/db";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { CreateOrganisationSchema } from "@/lib/schemas/organisations";
-import { adminOrgsRepo, orgsRepo } from "@/db/repositories";
-
-const adb = asAdminDb(adminDb);
+import {
+  createOrganisationFromAdminInput,
+  listOrganisationsFormattedForApi,
+} from "@/server/admin/queries/admin-organisations-queries";
 
 // ---------------------------------------------------------------------------
 // GET /api/organisations — public
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  const rows = await adminOrgsRepo.findAll(adb);
-  return NextResponse.json(
-    rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)),
-  );
+  const payload = await listOrganisationsFormattedForApi();
+  return NextResponse.json(payload);
 }
 
 // ---------------------------------------------------------------------------
@@ -41,36 +39,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const {
-    name,
-    type,
-    address,
-    latitude,
-    longitude,
-    phone,
-    website,
-    mapsUrl,
-    specialisations,
-    openingHours,
-  } = result.output;
+  const responseBody = await createOrganisationFromAdminInput(result.output);
 
-  const org = await adminOrgsRepo.create(adb, name.trim(), type);
-
-  let profile = null;
-  if (type === "clinic") {
-    profile = await adminOrgsRepo.upsertClinicProfile(adb, org.id, false, {
-      address: address ?? null,
-      latitude: latitude ?? null,
-      longitude: longitude ?? null,
-      phone: phone ?? null,
-      website: website ?? null,
-      mapsUrl: mapsUrl ?? null,
-      specialisations: specialisations ?? null,
-      openingHours: openingHours ?? null,
-    });
-  }
-
-  return NextResponse.json(orgsRepo.formatOrg(org, profile ?? null), {
+  return NextResponse.json(responseBody, {
     status: 201,
   });
 }

@@ -1,3 +1,20 @@
+-- RLS policies use `TO app_user`; LOGIN/password come from `scripts/setup-db-roles.sql` or hosting.
+DO
+$$
+  BEGIN
+    IF NOT EXISTS (
+      SELECT
+        1
+      FROM
+        pg_roles
+      WHERE
+        rolname = 'app_user'
+    ) THEN
+      CREATE ROLE app_user;
+    END IF;
+  END
+$$;
+--> statement-breakpoint
 CREATE TYPE "public"."organisation_type" AS ENUM('dispatch', 'clinic');--> statement-breakpoint
 CREATE TYPE "public"."membership_role" AS ENUM('member', 'admin');--> statement-breakpoint
 CREATE TYPE "public"."patient_gender" AS ENUM('male', 'female', 'other', 'unknown');--> statement-breakpoint

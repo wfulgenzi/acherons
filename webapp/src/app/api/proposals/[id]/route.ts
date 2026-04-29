@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { proposalsRepo, requestsRepo, bookingsRepo } from "@/db/repositories";
 import { createInboxNotification } from "@/lib/notifications/emit.server";
+import { executeDispatcherProposalAction } from "@/server/proposals/proposals-rls-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -34,64 +33,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const { action } = parsed.output;
 
-  const result = await withRLS(
+  const result = await executeDispatcherProposalAction(
     { userId, orgId: membership.orgId },
-    async (tx) => {
-      const proposal = await proposalsRepo.findById(tx, id);
-      if (!proposal) {
-        return { error: "Proposal not found.", status: 404 } as const;
-      }
-
-      // RLS ensures dispatcher_org_id = app.org_id, but guard explicitly
-      if (proposal.dispatcherOrgId !== membership.orgId) {
-        return { error: "Forbidden", status: 403 } as const;
-      }
-
-      if (proposal.status !== "pending") {
-        return {
-          error: "Proposal is no longer pending.",
-          status: 409,
-        } as const;
-      }
-
-      if (action === "refuse") {
-        await proposalsRepo.refuse(tx, id);
-        return {
-          outcome: "refused" as const,
-          clinicOrgId: proposal.clinicOrgId,
-          requestId: proposal.requestId,
-          proposalId: proposal.id,
-        };
-      }
-
-      // Accept: create booking + confirm the request atomically
-      const slots = proposal.proposedTimeslots;
-      if (!slots || slots.length === 0) {
-        return {
-          error: "No timeslots on this proposal.",
-          status: 400,
-        } as const;
-      }
-
-      const firstSlot = slots[0];
-      const booking = await bookingsRepo.create(tx, {
-        requestId: proposal.requestId,
-        proposalId: proposal.id,
-        dispatcherOrgId: proposal.dispatcherOrgId,
-        clinicOrgId: proposal.clinicOrgId,
-        confirmedStart: new Date(firstSlot.start),
-        confirmedEnd: new Date(firstSlot.end),
-      });
-      await proposalsRepo.accept(tx, id);
-      await requestsRepo.confirm(tx, proposal.requestId);
-
-      return {
-        outcome: "accepted" as const,
-        clinicOrgId: proposal.clinicOrgId,
-        requestId: proposal.requestId,
-        bookingId: booking.id,
-      };
-    },
+    id,
+    action,
   );
 
   if ("error" in result) {

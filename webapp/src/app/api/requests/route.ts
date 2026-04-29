@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { withRLS } from "@/db/rls";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
-import { requestsRepo, rcaRepo } from "@/db/repositories";
 import { notifyClinicsRequestCreated } from "@/lib/notifications/emit.server";
+import { createDispatcherRequestWithClinics } from "@/server/requests/requests-rls-queries";
 
 const CreateRequestSchema = v.object({
   patientGender: v.picklist(["male", "female", "other", "unknown"]),
@@ -38,19 +37,15 @@ export async function POST(request: NextRequest) {
   const { patientGender, patientAge, postcode, caseDescription, clinicIds } =
     parsed.output;
 
-  const newRequest = await withRLS(
+  const newRequest = await createDispatcherRequestWithClinics(
     { userId, orgId: membership.orgId },
-    async (tx) => {
-      const req = await requestsRepo.create(tx, {
-        dispatcherOrgId: membership.orgId,
-        createdByUserId: userId,
-        patientGender,
-        patientAge,
-        postcode,
-        caseDescription,
-      });
-      await rcaRepo.insertMany(tx, req.id, membership.orgId, clinicIds);
-      return req;
+    {
+      createdByUserId: userId,
+      patientGender,
+      patientAge,
+      postcode,
+      caseDescription,
+      clinicIds,
     },
   );
 
