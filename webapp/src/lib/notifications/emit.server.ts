@@ -2,15 +2,15 @@ import "server-only";
 
 import { after } from "next/server";
 import { adminDb, asAdminDb } from "@/db";
-import type { AdminDbOrTx } from "@/db/repositories/admin-notifications";
-import { adminNotificationsRepo } from "@/db/repositories";
-import { fanOutWebPushForOrg } from "@/lib/web-push/fanout-org.server";
+
+const adb = asAdminDb(adminDb);
+import type { AdminDbOrTx } from "@/server/notifications/admin-inbox-queries";
+import { insertInboxNotificationRowAdmin } from "@/server/notifications/admin-inbox-queries";
+import { fanOutWebPushForOrg } from "@/server/web-push/admin-web-push-queries";
 import {
   type NotificationType,
 } from "./contract";
 import { labelForNotificationType } from "./labels";
-
-const adb = asAdminDb(adminDb);
 
 function scheduleWebPushFanOut(recipientOrgId: string, type: NotificationType) {
   const title = "Acherons";
@@ -32,7 +32,7 @@ async function insertInboxRowWithFanOut(
   type: NotificationType,
   context: unknown,
 ) {
-  await adminNotificationsRepo.insertInboxNotificationRow(
+  await insertInboxNotificationRowAdmin(
     client,
     recipientOrgId,
     type,
@@ -68,6 +68,8 @@ export async function createInboxNotificationWithClient(
 ): Promise<void> {
   await insertInboxRowWithFanOut(client, recipientOrgId, type, context);
 }
+
+export type { AdminDbOrTx };
 
 /**
  * One `request.created` inbox row per invited clinic (single admin transaction).

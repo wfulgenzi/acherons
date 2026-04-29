@@ -1,7 +1,18 @@
 import "server-only";
 
 import { adminDb, asAdminDb } from "@/db";
-import { adminExtensionAuthRepo } from "@/db/repositories";
+import {
+  adminInsertActiveRefreshToken,
+  adminInsertExtensionClient,
+  adminInsertExtensionHandoffCode,
+  adminMarkHandoffUsed,
+  adminMarkRefreshRowConsumed,
+  adminPruneExcessRefreshTombstones,
+  adminRevokeExtensionClient,
+  adminSelectExtensionClientForUpdate,
+  adminSelectHandoffByHashForUpdate,
+  adminSelectRefreshByHashForUpdate,
+} from "@/server/extension/extension-auth-admin-queries";
 import { ExtensionAuthError } from "@/lib/extension-auth/errors";
 import { hashOpaque, newOpaqueSecret } from "@/lib/extension-auth/hashing";
 import { mintExtensionAccessJwt } from "@/lib/extension-auth/mint-access-jwt";
@@ -41,7 +52,7 @@ export async function createHandoff(
   const expires = new Date(
     Date.now() + EXTENSION_HANDOFF_TTL_MIN * 60_000,
   );
-  await adminExtensionAuthRepo.insertHandoffCode(asAdminDb(adminDb), {
+  await adminInsertExtensionHandoffCode(asAdminDb(adminDb), {
     codeHash,
     userId,
     expiresAt: expires,
@@ -60,8 +71,7 @@ export async function exchangeHandoffCode(
 ): Promise<ExchangeOrRefreshResult> {
   const codeHash = hashOpaque(code);
   return adminDb.transaction(async (tx) => {
-    const [row] =
-      await adminExtensionAuthRepo.selectHandoffByHashForUpdate(tx, codeHash);
+    const [row] = await adminSelectHandoffByHashForUpdate(tx, codeHash);
     if (!row) {
       throw new ExtensionAuthError("Invalid or unknown handoff code", 400);
     }
@@ -76,10 +86,7 @@ export async function exchangeHandoffCode(
       throw new ExtensionAuthError("No active organisation membership", 403);
     }
 
-    const created = await adminExtensionAuthRepo.insertExtensionClient(
-      tx,
-      row.userId,
-    );
+    const created = await adminInsertExtensionClient(tx, row.userId);
     if (!created) {
       throw new Error("Failed to create extension client");
     }
@@ -87,12 +94,8 @@ export async function exchangeHandoffCode(
 
     const refreshPlain = newOpaqueSecret();
     const refreshHash = hashOpaque(refreshPlain);
-    await adminExtensionAuthRepo.insertActiveRefreshToken(
-      tx,
-      clientId,
-      refreshHash,
-    );
-    await adminExtensionAuthRepo.markHandoffUsed(tx, row.id);
+    await adminInsertActiveRefreshToken(tx, clientId, refreshHash);
+    await adminMarkHandoffUsed(tx, row.id);
 
     const { token: accessToken, expiresAtSec: accessExpiresAtSec } =
       await mintExtensionAccessJwt({
@@ -117,18 +120,14 @@ export async function rotateRefreshToken(
 ): Promise<ExchangeOrRefreshResult> {
   const h = hashOpaque(refreshPlain);
   return adminDb.transaction(async (tx) => {
-    const [row] = await adminExtensionAuthRepo.selectRefreshByHashForUpdate(
-      tx,
-      h,
-    );
+    const [row] = await adminSelectRefreshByHashForUpdate(tx, h);
     if (!row) {
       throw new ExtensionAuthError("Invalid refresh token", 401);
     }
-    const [client] =
-      await adminExtensionAuthRepo.selectExtensionClientForUpdate(
-        tx,
-        row.clientId,
-      );
+    const [client] = await adminSelectExtensionClientForUpdate(
+      tx,
+      row.clientId,
+    );
     if (!client) {
       throw new ExtensionAuthError("Invalid client", 401);
     }
@@ -137,7 +136,7 @@ export async function rotateRefreshToken(
     }
 
     if (row.status === CONSUMED) {
-      await adminExtensionAuthRepo.revokeExtensionClient(tx, client.id);
+      await adminRevokeExtensionClient(tx, client.id);
       throw new ExtensionAuthError(
         "Refresh token reuse detected; sessions revoked",
         401,
@@ -153,9 +152,9 @@ export async function rotateRefreshToken(
     const newPlain = newOpaqueSecret();
     const newHash = hashOpaque(newPlain);
     const now = new Date();
-    await adminExtensionAuthRepo.markRefreshRowConsumed(tx, row.id, now);
-    await adminExtensionAuthRepo.insertActiveRefreshToken(tx, client.id, newHash);
-    await adminExtensionAuthRepo.pruneExcessRefreshTombstones(tx, client.id);
+    await adminMarkRefreshRowConsumed(tx, row.id, now);
+    await adminInsertActiveRefreshToken(tx, client.id, newHash);
+    await adminPruneExcessRefreshTombstones(tx, client.id);
 
     const { token: accessToken, expiresAtSec: accessExpiresAtSec } =
       await mintExtensionAccessJwt({

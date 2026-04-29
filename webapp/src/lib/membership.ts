@@ -1,6 +1,5 @@
 import { cache } from "react";
-import { withUserContext } from "@/db/rls";
-import { membershipsRepo } from "@/db/repositories";
+import { fetchMembershipRowWithOrgForUser } from "@/server/membership/membership-queries";
 
 export type MembershipContext = {
   orgId: string;
@@ -17,9 +16,7 @@ export type MembershipContext = {
 export async function getMembershipForRequest(
   userId: string,
 ): Promise<MembershipContext | null> {
-  const row = await withUserContext(userId, (tx) =>
-    membershipsRepo.findByUserIdWithOrg(tx, userId),
-  );
+  const row = await fetchMembershipRowWithOrgForUser(userId);
   if (!row) {
     return null;
   }
