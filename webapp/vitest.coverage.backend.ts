@@ -5,7 +5,7 @@
  */
 export const backendCoverage = {
   provider: "v8" as const,
-  reporter: ["text", "text-summary", "html", "json-summary", "lcov"] as const,
+  reporter: ["text", "text-summary", "html", "json-summary", "lcov"],
   /** Globs are relative to project root (webapp/). */
   include: [
     "src/server/**/*.ts",

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { requireAdmin, isApiError } from "@/lib/api";
-import { UpdateOrganisationSchema } from "@/lib/schemas/organisations";
+import { UpdateOrganisationSchema } from "@acherons/contracts";
 import {
   deleteOrganisationAsAdmin,
   getOrganisationFormattedById,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
+import { PatchProposalActionSchema } from "@acherons/contracts";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
@@ -8,10 +9,6 @@ import { createInboxNotification } from "@/lib/notifications/emit.server";
 import { executeDispatcherProposalAction } from "@/server/proposals/proposals-rls-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-const ActionSchema = v.object({
-  action: v.picklist(["accept", "refuse"]),
-});
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const apiAuth = await requireAppApiAuth(request.headers);
@@ -26,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
 
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(ActionSchema, body);
+  const parsed = v.safeParse(PatchProposalActionSchema, body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body." }, { status: 400 });
   }

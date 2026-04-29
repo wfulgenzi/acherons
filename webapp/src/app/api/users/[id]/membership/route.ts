@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
+import { AdminAssignMembershipSchema } from "@acherons/contracts";
 import { requireAdmin, isApiError } from "@/lib/api";
 import {
   adminAssignUserToOrg,
@@ -7,11 +8,6 @@ import {
 } from "@/server/admin/queries/admin-memberships-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-const AssignSchema = v.object({
-  orgId: v.pipe(v.string(), v.minLength(1)),
-  role: v.optional(v.picklist(["member", "admin"]), "member"),
-});
 
 // ---------------------------------------------------------------------------
 // POST /api/users/:id/membership — assign user to an org (admin only)
@@ -26,7 +22,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id: userId } = await params;
 
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(AssignSchema, body);
+  const parsed = v.safeParse(AdminAssignMembershipSchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body." },

@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@acherons/contracts": ["../packages/contracts/src/index.ts"],
+      "@acherons/contracts/*": ["../packages/contracts/src/*.ts"]
     }
   },
   "include": [

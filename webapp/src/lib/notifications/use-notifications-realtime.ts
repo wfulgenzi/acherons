@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { logNotificationsRealtime } from "./realtime-log";
 
 type Handlers = {
   onInsert: (row: Record<string, unknown>) => void;
@@ -19,8 +18,6 @@ export function useNotificationsRealtime(orgId: string, handlers: Handlers) {
     const supabase = createClient();
     const filter = `org_id=eq.${orgId}`;
 
-    logNotificationsRealtime("subscribe", { orgId, filter });
-
     const channel = supabase
       .channel(`notifications:${orgId}`)
       .on(
@@ -32,7 +29,6 @@ export function useNotificationsRealtime(orgId: string, handlers: Handlers) {
           filter,
         },
         (payload) => {
-          logNotificationsRealtime("postgres_changes INSERT", payload);
           if (payload.new) {
             onInsert(payload.new as Record<string, unknown>);
           }
@@ -47,15 +43,12 @@ export function useNotificationsRealtime(orgId: string, handlers: Handlers) {
           filter,
         },
         (payload) => {
-          logNotificationsRealtime("postgres_changes UPDATE", payload);
           if (payload.new) {
             onUpdate(payload.new as Record<string, unknown>);
           }
         },
       )
-      .subscribe((status, err) => {
-        logNotificationsRealtime("channel status", status, err?.message ?? "");
-      });
+      .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);

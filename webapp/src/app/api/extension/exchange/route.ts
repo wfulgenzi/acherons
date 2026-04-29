@@ -1,13 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import * as v from "valibot";
+import { ExtensionExchangeBodySchema } from "@acherons/contracts";
 import { exchangeHandoffCode } from "@/lib/extension-auth/grants.server";
 import { ExtensionAuthError } from "@/lib/extension-auth/errors";
 
 export const dynamic = "force-dynamic";
-
-const BodySchema = v.object({
-  code: v.pipe(v.string(), v.minLength(1, "code is required")),
-});
 
 /**
  * Exchanges a one-time handoff `code` for the first access + refresh pair and `clientId`.
@@ -15,7 +12,7 @@ const BodySchema = v.object({
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(BodySchema, body);
+  const parsed = v.safeParse(ExtensionExchangeBodySchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body.", issues: v.flatten(parsed.issues) },

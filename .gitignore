@@ -1,3 +1,6 @@
 # Local key material (e.g. Supabase JWT signing) — do not commit
 *.pem
 keys/
+
+# Yarn workspaces (root install)
+node_modules/

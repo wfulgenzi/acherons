@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as v from "valibot";
 import { Button } from "@/components/ui/Button";
-import { CreateOrganisationSchema } from "@/lib/schemas/organisations";
+import { CreateOrganisationSchema } from "@acherons/contracts";
 
 type FieldErrors = Partial<Record<string, string[]>>;
 

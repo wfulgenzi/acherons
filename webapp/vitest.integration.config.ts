@@ -12,6 +12,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@acherons/contracts": path.resolve(
+        __dirname,
+        "../packages/contracts/src/index.ts",
+      ),
       "server-only": path.resolve(__dirname, "./tests/stubs/server-only.ts"),
     },
   },

@@ -1,0 +1,5 @@
+{
+  "name": "acherons",
+  "private": true,
+  "workspaces": ["webapp", "packages/*"]
+}

@@ -1,23 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import * as v from "valibot";
+import { ExtensionRefreshBodySchema } from "@acherons/contracts";
 import { rotateRefreshToken } from "@/lib/extension-auth/grants.server";
 import { ExtensionAuthError } from "@/lib/extension-auth/errors";
 
 export const dynamic = "force-dynamic";
-
-const BodySchema = v.object({
-  refreshToken: v.pipe(
-    v.string(),
-    v.minLength(1, "refreshToken is required"),
-  ),
-});
 
 /**
  * Rotates refresh + issues a new access JWT. No session cookie; bearer refresh only.
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(BodySchema, body);
+  const parsed = v.safeParse(ExtensionRefreshBodySchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body.", issues: v.flatten(parsed.issues) },

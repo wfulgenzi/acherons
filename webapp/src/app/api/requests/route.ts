@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
+import { CreateDispatcherRequestSchema } from "@acherons/contracts";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
 import { notifyClinicsRequestCreated } from "@/lib/notifications/emit.server";
 import { createDispatcherRequestWithClinics } from "@/server/requests/requests-rls-queries";
-
-const CreateRequestSchema = v.object({
-  patientGender: v.picklist(["male", "female", "other", "unknown"]),
-  patientAge: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(150)),
-  postcode: v.pipe(v.string(), v.minLength(1)),
-  caseDescription: v.pipe(v.string(), v.minLength(1)),
-  clinicIds: v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.minLength(1)),
-});
 
 export async function POST(request: NextRequest) {
   const apiAuth = await requireAppApiAuth(request.headers);
@@ -26,7 +19,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(CreateRequestSchema, body);
+  const parsed = v.safeParse(CreateDispatcherRequestSchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body." },

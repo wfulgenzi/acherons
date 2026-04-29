@@ -6,7 +6,7 @@ import { adminOrgsRepo, orgsRepo } from "@/db/repositories";
 import type {
   CreateOrganisationInput,
   UpdateOrganisationInput,
-} from "@/lib/schemas/organisations";
+} from "@acherons/contracts";
 
 const adb = asAdminDb(adminDb);
 

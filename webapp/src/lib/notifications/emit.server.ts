@@ -2,15 +2,13 @@ import "server-only";
 
 import { after } from "next/server";
 import { adminDb, asAdminDb } from "@/db";
-
-const adb = asAdminDb(adminDb);
 import type { AdminDbOrTx } from "@/server/notifications/admin-inbox-queries";
 import { insertInboxNotificationRowAdmin } from "@/server/notifications/admin-inbox-queries";
 import { fanOutWebPushForOrg } from "@/server/web-push/admin-web-push-queries";
-import {
-  type NotificationType,
-} from "./contract";
+import { type NotificationType } from "./contract";
 import { labelForNotificationType } from "./labels";
+
+const adb = asAdminDb(adminDb);
 
 function scheduleWebPushFanOut(recipientOrgId: string, type: NotificationType) {
   const title = "Acherons";
@@ -20,9 +18,7 @@ function scheduleWebPushFanOut(recipientOrgId: string, type: NotificationType) {
       await fanOutWebPushForOrg(recipientOrgId, { title, body });
     });
   } catch {
-    void fanOutWebPushForOrg(recipientOrgId, { title, body }).catch((e) => {
-      console.error("[web-push] fan-out failed:", e);
-    });
+    void fanOutWebPushForOrg(recipientOrgId, { title, body }).catch(() => {});
   }
 }
 

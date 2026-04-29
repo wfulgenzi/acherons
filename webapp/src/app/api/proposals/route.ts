@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
+import { CreateProposalSchema } from "@acherons/contracts";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
 } from "@/lib/resolve-app-api-auth.server";
 import { createInboxNotification } from "@/lib/notifications/emit.server";
 import { createClinicProposalForRequest } from "@/server/proposals/proposals-rls-queries";
-
-const TimeslotSchema = v.object({
-  start: v.pipe(v.string(), v.minLength(1)),
-  end: v.pipe(v.string(), v.minLength(1)),
-});
-
-const CreateProposalSchema = v.object({
-  requestId: v.pipe(v.string(), v.uuid()),
-  proposedTimeslots: v.pipe(v.array(TimeslotSchema), v.minLength(1)),
-  notes: v.optional(v.string()),
-});
 
 export async function POST(request: NextRequest) {
   const apiAuth = await requireAppApiAuth(request.headers);

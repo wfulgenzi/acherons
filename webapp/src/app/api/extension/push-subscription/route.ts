@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import * as v from "valibot";
+import { ExtensionPushSubscriptionBodySchema } from "@acherons/contracts";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
@@ -8,16 +9,6 @@ import { WebPushClientForbiddenError } from "@/lib/web-push/upsert-subscription.
 import { upsertExtensionPushSubscription } from "@/server/extension/extension-rls-queries";
 
 export const dynamic = "force-dynamic";
-
-const KeysSchema = v.object({
-  p256dh: v.pipe(v.string(), v.minLength(1)),
-  auth: v.pipe(v.string(), v.minLength(1)),
-});
-
-const BodySchema = v.object({
-  endpoint: v.pipe(v.string(), v.minLength(1)),
-  keys: KeysSchema,
-});
 
 /**
  * Stores or updates a Web Push subscription for the caller’s active extension
@@ -42,7 +33,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(BodySchema, body);
+  const parsed = v.safeParse(ExtensionPushSubscriptionBodySchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body.", issues: v.flatten(parsed.issues) },

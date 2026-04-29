@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { extensionClient, webPushSubscription } from "@/db/schema/extension";
 import type { RLSDb } from "@/db/rls";
-import type { webPushSubscriptionKeys } from "./subscription-types";
+import type { WebPushSubscriptionKeys } from "@acherons/contracts";
 
 /**
  * Idempotent: same `endpoint` always upserts; updates `user_id` / `client_id` / `keys` / timestamps.
@@ -16,7 +16,7 @@ export async function upsertWebPushSubscriptionForClient(
     userId: string;
     clientId: string;
     endpoint: string;
-    keys: webPushSubscriptionKeys;
+    keys: WebPushSubscriptionKeys;
   },
 ): Promise<{ id: string }> {
   const { userId, clientId, endpoint, keys } = options;

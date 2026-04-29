@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
+import { PatchDispatcherRequestSchema } from "@acherons/contracts";
 import {
   isAppApiAuthError,
   requireAppApiAuth,
@@ -7,13 +8,6 @@ import {
 import { patchDispatcherRequestForOrg } from "@/server/requests/requests-rls-queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-const UpdateRequestSchema = v.partial(
-  v.object({
-    caseDescription: v.pipe(v.string(), v.minLength(1)),
-    clinicIds: v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.minLength(1)),
-  }),
-);
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const apiAuth = await requireAppApiAuth(request.headers);
@@ -28,7 +22,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
 
   const body = await request.json().catch(() => null);
-  const parsed = v.safeParse(UpdateRequestSchema, body);
+  const parsed = v.safeParse(PatchDispatcherRequestSchema, body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request body." },

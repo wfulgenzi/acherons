@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { adminDb } from "@/db";
+import { adminDb, asAdminDb } from "@/db";
 import { notifications, organisations } from "@/db/schema";
 import { insertInboxNotificationRowAdmin } from "@/server/notifications/admin-inbox-queries";
 import { resetIntegrationDatabase } from "../helpers/test-db";
@@ -23,7 +23,7 @@ describe("admin inbox queries (integration)", () => {
 
   it("insertInboxNotificationRowAdmin persists a validated notification row", async () => {
     await insertInboxNotificationRowAdmin(
-      adminDb,
+      asAdminDb(adminDb),
       ORG_ID,
       "request.created",
       { requestId: REQUEST_ID },

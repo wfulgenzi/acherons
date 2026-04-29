@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { adminDb } from "@/db";
+import { adminDb, asAdminDb } from "@/db";
 import { user } from "@/db/schema";
 import { extensionHandoffCode, extensionRefresh } from "@/db/schema/extension";
 import {
@@ -33,7 +33,7 @@ describe("extension auth admin queries (integration)", () => {
 
   it("runs handoff → client → refresh flow via server wrappers", async () => {
     const expiresAt = new Date(Date.now() + 60_000);
-    await adminInsertExtensionHandoffCode(adminDb, {
+    await adminInsertExtensionHandoffCode(asAdminDb(adminDb), {
       codeHash: "hash_handoff_integration",
       userId: SEED_USER_ID,
       expiresAt,
