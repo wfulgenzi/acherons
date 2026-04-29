@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import { adminDb } from "@/db";
-import { user } from "@/db/schema";
+import { adminDb, asAdminDb } from "@/db";
 import { requireAdmin, isApiError } from "@/lib/api";
-import { membershipsRepo, orgsRepo } from "@/db/repositories";
+import {
+  adminMembershipsRepo,
+  adminOrgsRepo,
+  adminUsersRepo,
+} from "@/db/repositories";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+const adb = asAdminDb(adminDb);
 
 const AssignSchema = v.object({
   orgId: v.pipe(v.string(), v.minLength(1)),
@@ -25,12 +29,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const { id: userId } = await params;
 
-  const targetUser = await adminDb
-    .select()
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
-  if (!targetUser[0]) {
+  const targetUser = await adminUsersRepo.findById(adb, userId);
+  if (!targetUser) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
   const { orgId, role } = parsed.output;
 
-  const org = await orgsRepo.findById(adminDb, orgId);
+  const org = await adminOrgsRepo.findById(adb, orgId);
   if (!org) {
     return NextResponse.json(
       { error: "Organisation not found." },
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     );
   }
 
-  await membershipsRepo.upsertForUser(adminDb, userId, orgId, role);
+  await adminMembershipsRepo.upsertForUser(adb, userId, orgId, role);
 
   return NextResponse.json({ ok: true });
 }
@@ -69,7 +69,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
 
   const { id: userId } = await params;
 
-  const deleted = await membershipsRepo.deleteByUserId(adminDb, userId);
+  const deleted = await adminMembershipsRepo.deleteByUserId(adb, userId);
   if (!deleted) {
     return NextResponse.json(
       { error: "No membership found." },

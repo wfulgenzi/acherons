@@ -93,3 +93,22 @@ async function checkExtensionSession() {
   }
   return { state: "error", detail: `${res.status} ${(text || "").slice(0, 160)}` };
 }
+
+/**
+ * After a successful `checkExtensionSession`, returns the Bearer access token for API calls.
+ * Used by the background service worker for Web Push registration (same base URL as APP_BASE).
+ *
+ * @returns {Promise<{ ok: true, token: string } | { ok: false, detail: string }>}
+ */
+async function getBearerAccessToken() {
+  const session = await checkExtensionSession();
+  if (session.state !== "ok") {
+    return { ok: false, detail: session.detail };
+  }
+  const st = await getStorageTokens();
+  const token = st.accessToken;
+  if (typeof token !== "string" || !token) {
+    return { ok: false, detail: "No access token." };
+  }
+  return { ok: true, token };
+}

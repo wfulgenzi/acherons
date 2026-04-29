@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import {
   index,
+  integer,
+  jsonb,
   pgTable,
   pgEnum,
   uuid,
@@ -79,5 +81,43 @@ export const extensionRefresh = pgTable(
     uniqueIndex("extension_refresh_client_id_active_unique")
       .on(t.clientId)
       .where(sql`${t.status} = 'active'`),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// web_push_subscription — browser PushManager subscriptions (VAPID, etc.)
+// ---------------------------------------------------------------------------
+// - `endpoint` is unique (one row per device subscription URL).
+// - `keys` holds PushSubscription JSON keys: `{ p256dh, auth }` (base64url).
+// - `client_id` → `extension_client` when the subscriber is a linked extension
+//   install; dropped with `user` or that client (e.g. line revoked) via CASCADE.
+// ---------------------------------------------------------------------------
+
+export const webPushSubscription = pgTable(
+  "web_push_subscription",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => extensionClient.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull().unique(),
+    keys: jsonb("keys")
+      .notNull()
+      .$type<{ p256dh: string; auth: string }>(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    failureCount: integer("failure_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("web_push_subscription_user_id_idx").on(t.userId),
+    index("web_push_subscription_client_id_idx").on(t.clientId),
   ],
 );

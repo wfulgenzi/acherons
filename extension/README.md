@@ -32,11 +32,22 @@ The web app’s Better Auth session in the main browser is **unchanged**. The se
 
 **If the window closes with no “Stored tokens”** after you log in, the flow did not end on `https://<id>.chromiumapp.org/...?code=...` (the URL Chrome is waiting for). The popup will log a **truncated final URL** and hints. Common causes: login did not return to `/extension/connect?...` (e.g. OAuth callback: use a full URL, now fixed in the login page), or you need a **full page** navigation after email sign-in (also fixed) so the handoff 302 is reliable. Try **email + password** first if Google still misbehours.
 
-4. To use another API base, change `APP_BASE` in `popup.js` and reload the extension on `chrome://extensions` (↻).
+4. To use another API base, change `APP_BASE` in `lib.js` and reload the extension on `chrome://extensions` (↻).
+
+## Web Push (VAPID)
+
+After **Connect** (Bearer tokens stored), use **Register Web Push** in the popup:
+
+1. Grants **notification** permission (browser prompt).
+2. The **background service worker** (`background.js`) loads `GET /api/extension/push-vapid`, runs `pushManager.subscribe` with the public key, then `POST /api/extension/push-subscription` with your extension access token.
+
+Requires **`WEB_PUSH_*` env** on the webapp and migration `web_push_subscription` + RLS applied. If `push-vapid` returns 503, configure VAPID in `webapp/.env.local`.
+
+The background SW handles **`push`** (shows a system notification; JSON `{ title, body }` or `{ message }` if present, else plain text / defaults) and **`notificationclick`** (focus an open tab on `APP_BASE`, else open `/dashboard`).
 
 ## Change the app URL
 
-Edit `APP_BASE` at the top of `popup.js`. For HTTPS local, add the host to `host_permissions` in `manifest.json`.
+Edit `APP_BASE` at the top of `lib.js`. For HTTPS local, add the host to `host_permissions` in `manifest.json`.
 
 ## Production
 

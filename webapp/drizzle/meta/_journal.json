@@ -64,6 +64,20 @@
       "when": 1777196263944,
       "tag": "0008_narrow_epoch",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777232409036,
+      "tag": "0009_busy_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778000000000,
+      "tag": "0010_extension_web_push_rls",
+      "breakpoints": true
     }
   ]
 }

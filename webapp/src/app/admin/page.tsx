@@ -1,9 +1,10 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { count, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { adminDb } from "@/db";
-import { user, organisations } from "@/db/schema";
+import { adminDb, asAdminDb } from "@/db";
+import { adminDashboardRepo } from "@/db/repositories";
+
+const adb = asAdminDb(adminDb);
 
 export default async function AdminDashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -11,21 +12,8 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  const [
-    [{ total: userCount }],
-    [{ total: clinicCount }],
-    [{ total: dispatcherCount }],
-  ] = await Promise.all([
-    adminDb.select({ total: count() }).from(user),
-    adminDb
-      .select({ total: count() })
-      .from(organisations)
-      .where(eq(organisations.type, "clinic")),
-    adminDb
-      .select({ total: count() })
-      .from(organisations)
-      .where(eq(organisations.type, "dispatch")),
-  ]);
+  const { userCount, clinicCount, dispatcherCount } =
+    await adminDashboardRepo.getOverviewCounts(adb);
 
   return (
     <div className="p-8">

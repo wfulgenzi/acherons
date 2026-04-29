@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
-import { adminDb } from "@/db";
+import { adminDb, asAdminDb } from "@/db";
 import { requireAdmin, isApiError } from "@/lib/api";
 import { CreateOrganisationSchema } from "@/lib/schemas/organisations";
-import { orgsRepo } from "@/db/repositories";
+import { adminOrgsRepo, orgsRepo } from "@/db/repositories";
+
+const adb = asAdminDb(adminDb);
 
 // ---------------------------------------------------------------------------
 // GET /api/organisations — public
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  const rows = await orgsRepo.findAll(adminDb);
+  const rows = await adminOrgsRepo.findAll(adb);
   return NextResponse.json(
     rows.map((r) => orgsRepo.formatOrg(r.organisations, r.clinic_profiles)),
   );
@@ -52,11 +54,11 @@ export async function POST(request: NextRequest) {
     openingHours,
   } = result.output;
 
-  const org = await orgsRepo.create(adminDb, name.trim(), type);
+  const org = await adminOrgsRepo.create(adb, name.trim(), type);
 
   let profile = null;
   if (type === "clinic") {
-    profile = await orgsRepo.upsertClinicProfile(adminDb, org.id, false, {
+    profile = await adminOrgsRepo.upsertClinicProfile(adb, org.id, false, {
       address: address ?? null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,

@@ -29,6 +29,24 @@ document.getElementById("base-label").textContent = base;
 
 const pill = document.getElementById("status-pill");
 const statusHint = document.getElementById("status-hint");
+const notifPermissionEl = document.getElementById("notif-permission");
+
+function refreshNotifPermissionLine() {
+  if (!notifPermissionEl) {
+    return;
+  }
+  chrome.runtime.sendMessage({ type: "GET_NOTIFICATION_PERMISSION" }, (r) => {
+    const err = chrome.runtime.lastError;
+    if (err || !r || typeof r.permission !== "string") {
+      notifPermissionEl.textContent = "";
+      return;
+    }
+    notifPermissionEl.textContent =
+      "Chrome notification permission: " +
+      r.permission +
+      ". If banners still never appear, enable Google Chrome in macOS System Settings → Notifications.";
+  });
+}
 
 async function refreshPill() {
   pill.className = "status-pill status-na";
@@ -150,4 +168,59 @@ document.getElementById("connect").addEventListener("click", () => {
   );
 });
 
+document.getElementById("test-notification").addEventListener("click", () => {
+  clearLog();
+  chrome.runtime.sendMessage({ type: "TEST_NOTIFICATION" }, (r) => {
+    const err = chrome.runtime.lastError;
+    if (err) {
+      log(String(err.message), "err");
+      return;
+    }
+    if (r && r.ok) {
+      log(
+        "Test notification sent. Check the corner of the screen or Notification Center.",
+        "ok",
+      );
+    } else {
+      log(r && r.error ? r.error : "Unknown error", "err");
+    }
+    refreshNotifPermissionLine();
+  });
+});
+
+document.getElementById("open-notify-settings").addEventListener("click", () => {
+  chrome.tabs.create({ url: "chrome://settings/content/notifications" });
+});
+
+document.getElementById("push-register").addEventListener("click", async () => {
+  clearLog();
+  let perm;
+  try {
+    perm = await Notification.requestPermission();
+  } catch (e) {
+    log(String(e && e.message ? e.message : e), "err");
+    return;
+  }
+  if (perm !== "granted") {
+    log("Notification permission not granted (" + perm + ").", "err");
+    return;
+  }
+  log("Registering Web Push (background)…");
+  chrome.runtime.sendMessage({ type: "WEB_PUSH_REGISTER", baseUrl: base }, (response) => {
+    const err = chrome.runtime.lastError;
+    if (err) {
+      log(String(err.message), "err");
+      return;
+    }
+    if (response && response.ok) {
+      log("Web Push registered. Server id: " + response.id, "ok");
+    } else {
+      log(response && response.error ? response.error : "Unknown error", "err");
+    }
+    void refreshPill();
+    refreshNotifPermissionLine();
+  });
+});
+
 void refreshPill();
+refreshNotifPermissionLine();

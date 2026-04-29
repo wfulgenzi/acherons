@@ -1,10 +1,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { adminDb } from "@/db";
-import { user, memberships, organisations } from "@/db/schema";
+import { adminDb, asAdminDb } from "@/db";
+import { adminUsersRepo } from "@/db/repositories";
 import { UsersTable, type UserRow } from "./UsersTable";
+
+const adb = asAdminDb(adminDb);
 
 export default async function UsersPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -12,12 +13,7 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  const rows = await adminDb
-    .select()
-    .from(user)
-    .leftJoin(memberships, eq(memberships.userId, user.id))
-    .leftJoin(organisations, eq(organisations.id, memberships.orgId))
-    .orderBy(user.createdAt);
+  const rows = await adminUsersRepo.listWithMemberships(adb);
 
   const data: UserRow[] = rows.map((r) => ({
     id: r.user.id,

@@ -1,24 +1,45 @@
 import "server-only";
 
-import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type { PgTransaction } from "drizzle-orm/pg-core";
-import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
-import { adminDb } from "@/db";
-import * as schema from "@/db/schema";
-import { notifications } from "@/db/schema/notifications";
+import { after } from "next/server";
+import { adminDb, asAdminDb } from "@/db";
+import type { AdminDbOrTx } from "@/db/repositories/admin-notifications";
+import { adminNotificationsRepo } from "@/db/repositories";
+import { fanOutWebPushForOrg } from "@/lib/web-push/fanout-org.server";
 import {
   type NotificationType,
-  parseNotificationContext,
 } from "./contract";
+import { labelForNotificationType } from "./labels";
 
-/** Admin pool or a transaction from `adminDb.transaction` (both support `.insert`). */
-type AdminDbOrTx =
-  | typeof adminDb
-  | PgTransaction<
-      PostgresJsQueryResultHKT,
-      typeof schema,
-      ExtractTablesWithRelations<typeof schema>
-    >;
+const adb = asAdminDb(adminDb);
+
+function scheduleWebPushFanOut(recipientOrgId: string, type: NotificationType) {
+  const title = "Acherons";
+  const body = labelForNotificationType(type);
+  try {
+    after(async () => {
+      await fanOutWebPushForOrg(recipientOrgId, { title, body });
+    });
+  } catch {
+    void fanOutWebPushForOrg(recipientOrgId, { title, body }).catch((e) => {
+      console.error("[web-push] fan-out failed:", e);
+    });
+  }
+}
+
+async function insertInboxRowWithFanOut(
+  client: AdminDbOrTx,
+  recipientOrgId: string,
+  type: NotificationType,
+  context: unknown,
+) {
+  await adminNotificationsRepo.insertInboxNotificationRow(
+    client,
+    recipientOrgId,
+    type,
+    context,
+  );
+  scheduleWebPushFanOut(recipientOrgId, type);
+}
 
 /**
  * Inserts a single `notifications` row for the **recipient** org inbox.
@@ -31,7 +52,7 @@ export async function createInboxNotification(
   type: NotificationType,
   context: unknown,
 ): Promise<void> {
-  await insertInboxRow(adminDb, recipientOrgId, type, context);
+  await insertInboxRowWithFanOut(adb, recipientOrgId, type, context);
 }
 
 /**
@@ -45,21 +66,7 @@ export async function createInboxNotificationWithClient(
   type: NotificationType,
   context: unknown,
 ): Promise<void> {
-  await insertInboxRow(client, recipientOrgId, type, context);
-}
-
-async function insertInboxRow(
-  client: AdminDbOrTx,
-  recipientOrgId: string,
-  type: NotificationType,
-  context: unknown,
-) {
-  const ctx = parseNotificationContext(type, context);
-  await client.insert(notifications).values({
-    orgId: recipientOrgId,
-    type,
-    context: ctx,
-  });
+  await insertInboxRowWithFanOut(client, recipientOrgId, type, context);
 }
 
 /**
@@ -74,7 +81,9 @@ export async function notifyClinicsRequestCreated(
   }
   await adminDb.transaction(async (tx) => {
     for (const clinicOrgId of clinicOrgIds) {
-      await insertInboxRow(tx, clinicOrgId, "request.created", { requestId });
+      await insertInboxRowWithFanOut(tx, clinicOrgId, "request.created", {
+        requestId,
+      });
     }
   });
 }

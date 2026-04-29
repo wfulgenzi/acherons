@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { ExtensionNotificationHint } from "./ExtensionNotificationHint";
 
 export default async function OnboardingPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -24,6 +25,7 @@ export default async function OnboardingPage() {
           </a>{" "}
           about creating your project.
         </p>
+        <ExtensionNotificationHint />
       </div>
     </div>
   );

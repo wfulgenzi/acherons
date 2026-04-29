@@ -1,16 +1,16 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { adminDb } from "@/db";
-import { user, memberships, organisations } from "@/db/schema";
-import { orgsRepo } from "@/db/repositories";
+import { adminDb, asAdminDb } from "@/db";
+import { adminOrgsRepo, adminUsersRepo } from "@/db/repositories";
 import {
   MembershipManager,
   type CurrentMembership,
   type OrgOption,
 } from "./MembershipManager";
+
+const adb = asAdminDb(adminDb);
 import { Badge } from "@/components/ui/Badge";
 
 type Props = { params: Promise<{ id: string }> };
@@ -23,23 +23,15 @@ export default async function UserDetailPage({ params }: Props) {
     redirect("/dashboard");
   }
 
-  const [userRows, membershipRows, allOrgs] = await Promise.all([
-    adminDb.select().from(user).where(eq(user.id, id)).limit(1),
-    adminDb
-      .select()
-      .from(memberships)
-      .leftJoin(organisations, eq(organisations.id, memberships.orgId))
-      .where(eq(memberships.userId, id))
-      .limit(1),
-    orgsRepo.findAllSummary(adminDb),
+  const [u, membershipRow, allOrgs] = await Promise.all([
+    adminUsersRepo.findById(adb, id),
+    adminUsersRepo.findMembershipWithOrgForUser(adb, id),
+    adminOrgsRepo.findAllSummary(adb),
   ]);
 
-  const u = userRows[0];
   if (!u) {
     notFound();
   }
-
-  const membershipRow = membershipRows[0] ?? null;
   const membership: CurrentMembership | null = membershipRow?.organisations
     ? {
         orgId: membershipRow.organisations.id,

@@ -2,12 +2,14 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { adminDb } from "@/db";
-import { orgsRepo, membershipsRepo } from "@/db/repositories";
+import { adminDb, asAdminDb } from "@/db";
+import { adminMembershipsRepo, adminOrgsRepo } from "@/db/repositories";
 import {
   OrgMembersTable,
   type OrgMemberRow,
 } from "@/components/OrgMembersTable";
+
+const adb = asAdminDb(adminDb);
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -20,8 +22,8 @@ export default async function ClinicDetailPage({ params }: Props) {
   }
 
   const [row, memberRows] = await Promise.all([
-    orgsRepo.findById(adminDb, id),
-    membershipsRepo.findByOrgId(adminDb, id),
+    adminOrgsRepo.findById(adb, id),
+    adminMembershipsRepo.findByOrgId(adb, id),
   ]);
 
   if (!row || row.organisations.type !== "clinic") {

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { adminDb } from "@/db";
-import { user } from "@/db/schema";
+import { adminDb, asAdminDb } from "@/db";
+import { adminUsersRepo } from "@/db/repositories";
 import { requireAdmin, isApiError } from "@/lib/api";
+
+const adb = asAdminDb(adminDb);
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -27,16 +28,12 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const rows = await adminDb
-    .select()
-    .from(user)
-    .where(eq(user.id, id))
-    .limit(1);
-  if (!rows[0]) {
+  const u = await adminUsersRepo.findById(adb, id);
+  if (!u) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
 
-  await adminDb.delete(user).where(eq(user.id, id));
+  await adminUsersRepo.deleteById(adb, id);
 
   return new NextResponse(null, { status: 204 });
 }

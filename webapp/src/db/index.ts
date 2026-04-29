@@ -26,3 +26,18 @@ export const db = drizzle(client, { schema });
 // superuser connection — bypasses RLS. Use for admin routes and bootstrap
 // queries (e.g. loading a user's membership before orgId is known).
 export const adminDb = drizzle(adminClient, { schema });
+
+/**
+ * Branded handle for the admin connection (mirrors the `RLSDb` pattern in
+ * `rls.ts`). Repository functions that bypass RLS should take `AdminDb` as
+ * their first argument so they cannot be called with `db` / `withRLS` by
+ * accident. Callers pass `adminDb` (satisfies the brand structurally) or
+ * `tx as AdminDb` inside `adminDb.transaction`.
+ */
+declare const adminBrand: unique symbol;
+export type AdminDb = typeof adminDb & { readonly [adminBrand]: true };
+
+/** Pass {@link adminDb} (or an admin transaction handle) into repos expecting {@link AdminDb}. */
+export function asAdminDb(connection: typeof adminDb): AdminDb {
+  return connection as AdminDb;
+}

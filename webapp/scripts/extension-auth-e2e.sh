@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
-# E2E smoke: handoff (session) → exchange → optional refresh → bearer API.
+# E2E smoke: handoff (session) → exchange → refresh → bearer API → Web Push register.
 #
 # 1) Log in via the web app, then in DevTools → Application → Cookies for your
 #    app origin, copy the full cookie *value* for the session, or the whole
 #    "Cookie" header. User must have completed org onboarding (handoff 403s
 #    without a membership).
+#
+# The /api/extension/push-subscription route does **not** use the session cookie; it
+# only accepts `Authorization: Bearer` + the extension access JWT. This script
+# uses your cookie only for the handoff step, then exercises push with the same
+# access token you would use from the real extension. To retest push alone with
+# a token you already have, use `scripts/curl-push-subscription.sh`.
 #
 # Usage (from webapp/):
 #   export EXT_AUTH_COOKIE="better-auth.session_token=...;"   # or full header string
@@ -94,4 +100,29 @@ if ! is_http_200 "$B_STATUS"; then
   exit 1
 fi
 echo "    $N"
-echo "==> OK — extension auth round-trip succeeded."
+
+# Same JWT as a real extension would use for API calls; server checks RLS on
+# web_push_subscription + extension_client.
+echo "==> POST $BASE_URL/api/extension/push-subscription (Authorization: Bearer)"
+# Placeholder Web Push material — not a real PushManager subscription; only
+# validates route + valibot + RLS. Replace with a real toJSON() payload when
+# testing from a browser or MV3.
+PUSH_JSON='{"endpoint":"https://fcm.googleapis.com/fcm/send/acherons-e2e-placeholder","keys":{"p256dh":"e2e-p256dh-placeholder","auth":"e2e-auth-placeholder"}}'
+curl -sS -D /tmp/ea-push-hdr -o /tmp/ea-push-body \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ACCESS2" \
+  -d "$PUSH_JSON" \
+  -X POST "$BASE_URL/api/extension/push-subscription" >/dev/null
+PUSH_STATUS=$(head -1 /tmp/ea-push-hdr | tr -d '\r')
+if ! is_http_200 "$PUSH_STATUS"; then
+  echo "push-subscription failed: $PUSH_STATUS"
+  cat /tmp/ea-push-body
+  echo
+  echo "If 403, ensure you are using a fresh handoff+exchange (client must exist and not be revoked)."
+  echo "If 403 on extension token, session-only auth is not accepted for this route (by design)."
+  exit 1
+fi
+python3 -c "import json; d=json.load(open('/tmp/ea-push-body')); assert d.get('ok') and d.get('id'), d"
+echo "    push id: $(python3 -c "import json; print(json.load(open('/tmp/ea-push-body'))['id'])")"
+
+echo "==> OK — extension auth + push registration round-trip succeeded."

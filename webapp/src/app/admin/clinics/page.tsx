@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
-import { adminDb } from "@/db";
-import { orgsRepo, membershipsRepo } from "@/db/repositories";
+import { adminDb, asAdminDb } from "@/db";
+import { adminMembershipsRepo, adminOrgsRepo } from "@/db/repositories";
 import { ClinicsTable, type ClinicRow } from "./ClinicsTable";
+
+const adb = asAdminDb(adminDb);
 
 export default async function ClinicsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -14,8 +16,8 @@ export default async function ClinicsPage() {
   }
 
   const [rows, memberCounts] = await Promise.all([
-    orgsRepo.findAllByType(adminDb, "clinic"),
-    membershipsRepo.memberCountsByOrg(adminDb),
+    adminOrgsRepo.findAllByType(adb, "clinic"),
+    adminMembershipsRepo.memberCountsByOrg(adb),
   ]);
 
   const countMap = Object.fromEntries(
