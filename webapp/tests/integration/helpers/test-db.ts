@@ -104,7 +104,8 @@ export async function resetIntegrationDatabase(): Promise<void> {
 
 /**
  * Placeholder for shared fixtures (orgs, users, memberships). Extend when writing RLS tests.
+ * Use {@link getIntegrationDbUrls} when you need `adminUrl` / `appUrl`.
  */
-export async function seedMinimalBaseline(_ctx: TestSeedContext): Promise<void> {
+export async function seedMinimalBaseline(): Promise<void> {
   // Intentionally empty — add inserts via admin connection when B7-style tests land.
 }
