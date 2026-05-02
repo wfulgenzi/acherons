@@ -74,7 +74,7 @@ export async function findAccessibleByClinic(tx: RLSDb, clinicOrgId: string) {
     )
     .leftJoin(user, eq(user.id, requests.createdByUserId))
     .where(eq(requests.status, "open"))
-    .orderBy(requests.createdAt);
+    .orderBy(desc(requests.createdAt));
 }
 
 /** Dispatcher: fetch a single request, scoped to their org. */

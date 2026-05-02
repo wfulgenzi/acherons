@@ -1,3 +1,4 @@
 {
-  "regions": ["dub1"]
+  "regions": ["dub1"],
+  "installCommand": "cd .. && yarn install --frozen-lockfile"
 }

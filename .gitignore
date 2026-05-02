@@ -4,3 +4,5 @@ keys/
 
 # Yarn workspaces (root install)
 node_modules/
+.vercel
+.env*.local

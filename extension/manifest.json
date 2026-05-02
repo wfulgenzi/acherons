@@ -1,15 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "Acherons HS (local dev)",
+  "name": "Acherons HS",
   "version": "0.0.1",
-  "description": "Spike: handoff + extension token (localhost only).",
+  "description": "Acherons HS",
   "permissions": ["identity", "storage", "tabs", "notifications", "offscreen"],
+  "icons": {
+    "16": "favicon.png",
+    "32": "favicon.png",
+    "48": "favicon.png",
+    "128": "favicon.png"
+  },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "host_permissions": ["http://localhost:3000/*"],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Acherons (local)"
+    "default_popup": "pages/popup.html",
+    "default_title": "Acherons HS",
+    "default_icon": {
+      "16": "favicon.png",
+      "32": "favicon.png",
+      "48": "favicon.png",
+      "128": "favicon.png"
+    }
   }
 }

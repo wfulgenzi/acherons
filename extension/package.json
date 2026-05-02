@@ -1,0 +1,35 @@
+{
+  "name": "@acherons/extension",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --noEmit && vite build --watch --mode development",
+    "build:dev": "tsc --noEmit && vite build --mode development",
+    "build": "tsc --noEmit && vite build --mode production",
+    "check": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@acherons/contracts": "0.1.0",
+    "@acherons/ui": "0.1.0",
+    "@tanstack/query-async-storage-persister": "^5.100.6",
+    "@tanstack/react-query": "^5",
+    "@tanstack/react-query-persist-client": "^5.100.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "valibot": "^1.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@types/chrome": "^0.0.268",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}

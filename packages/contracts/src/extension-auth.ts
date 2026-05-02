@@ -20,12 +20,16 @@ export type ExtensionExchangeRequest = v.InferOutput<
 >;
 
 /** POST `/api/extension/exchange` & `/api/extension/refresh` success body */
-export type ExtensionTokenResponse = {
-  accessToken: string;
-  refreshToken: string;
-  clientId: string;
-  expiresAt: number;
-};
+export const ExtensionTokenResponseSchema = v.object({
+  accessToken: v.string(),
+  refreshToken: v.string(),
+  clientId: v.string(),
+  expiresAt: v.number(),
+});
+
+export type ExtensionTokenResponse = v.InferOutput<
+  typeof ExtensionTokenResponseSchema
+>;
 
 /** POST `/api/extension/refresh` */
 export type ExtensionRefreshRequest = v.InferOutput<
@@ -43,3 +47,28 @@ export type ExtensionAuthErrorResponse = {
   error: string;
   code?: string;
 };
+
+/** Organisation membership as returned to the extension (mirrors app `MembershipContext` wire shape). */
+export const ExtensionMembershipWireSchema = v.object({
+  orgId: v.string(),
+  orgName: v.string(),
+  orgType: v.picklist(["dispatch", "clinic"]),
+  role: v.picklist(["member", "admin"]),
+});
+
+export type ExtensionMembershipWire = v.InferOutput<
+  typeof ExtensionMembershipWireSchema
+>;
+
+/**
+ * GET `/api/extension/me`
+ * Bearer extension access JWT only (no session cookie).
+ * Org-level role (`membership.role`) is the org membership admin flag, not global platform admin.
+ */
+export const ExtensionMeResponseSchema = v.object({
+  membership: v.nullable(ExtensionMembershipWireSchema),
+});
+
+export type ExtensionMeResponse = v.InferOutput<
+  typeof ExtensionMeResponseSchema
+>;

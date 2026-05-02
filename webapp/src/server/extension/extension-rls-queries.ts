@@ -2,7 +2,7 @@
  * Extension API: RLS scoped by `userId` only (no org).
  */
 import { withRLS } from "@/db/rls";
-import type { webPushSubscriptionKeys } from "@/lib/web-push/subscription-types";
+import type { WebPushSubscriptionKeys } from "@acherons/contracts";
 import {
   assertActiveExtensionClientForUser,
   upsertWebPushSubscriptionForClient,
@@ -13,7 +13,7 @@ export async function upsertExtensionPushSubscription(
   options: {
     clientId: string;
     endpoint: string;
-    keys: webPushSubscriptionKeys;
+    keys: WebPushSubscriptionKeys;
   },
 ) {
   return withRLS({ userId }, async (tx) => {

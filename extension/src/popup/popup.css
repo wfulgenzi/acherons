@@ -1,0 +1,116 @@
+/* Fixed popup viewport — single source of truth for Chrome popup size */
+html,
+body,
+#root {
+  width: 320px;
+  height: 500px;
+  min-height: 500px;
+  max-height: 500px;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+h1 {
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+button {
+  width: 100%;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.popup-log {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #333;
+  max-height: 200px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.popup-log .err {
+  color: #a40000;
+}
+
+.popup-log .ok {
+  color: #0a0;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin: 0 0 8px;
+}
+
+.status-ok {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.status-bad,
+.status-mid,
+.status-na {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.status-bad {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.status-mid {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 6px;
+}
+
+.row-actions button.secondary {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-weight: 500;
+}
+
+.status-hint {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: #555;
+}
+
+.notif-permission {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #555;
+}

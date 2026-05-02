@@ -1,0 +1,24 @@
+@import "@acherons/ui/theme.css";
+
+/*
+ * Theme CSS lives in packages/ui; explicitly scan this app so utilities always
+ * match TSX under src/ (Tailwind v4).
+ */
+@source "../**/*.{ts,tsx}";
+
+/*
+ * Shared `--color-brand-600` is tuned for large fills (sidebar pills); chroma is
+ * low (~0.055) so 2–3px borders and small accents read grey in the narrow popup.
+ */
+@theme inline {
+  --color-brand-600: oklch(0.5 0.12 145);
+}
+
+/*
+ * Webapp sets --font-manrope / --font-sora via next/font on <html>. The extension
+ * uses system UI stacks so shared theme tokens resolve without bundling fonts.
+ */
+:root {
+  --font-manrope: ui-sans-serif, system-ui, sans-serif;
+  --font-sora: ui-sans-serif, system-ui, sans-serif;
+}
