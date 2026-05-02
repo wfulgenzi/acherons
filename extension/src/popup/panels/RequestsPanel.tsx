@@ -21,11 +21,7 @@ type Props = {
 
 export function RequestsPanel({ accessToken, sessionScope }: Props) {
   const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: [
-      "clinic",
-      "requests",
-      ...sessionQueryKeyPart(sessionScope),
-    ],
+    queryKey: ["clinic", "requests", ...sessionQueryKeyPart(sessionScope)],
     queryFn: () => fetchClinicRequestsQuery(accessToken),
     staleTime: STALE_LIST_MS,
     enabled: Boolean(accessToken),

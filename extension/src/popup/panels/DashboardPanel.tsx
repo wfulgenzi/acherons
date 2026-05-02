@@ -30,18 +30,8 @@ type Props = {
 const ATTENTION_DOT = ["bg-red-500", "bg-amber-400", "bg-brand-500"] as const;
 
 export function DashboardPanel({ accessToken, sessionScope }: Props) {
-  const {
-    data,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: [
-      "clinic",
-      "dashboard",
-      ...sessionQueryKeyPart(sessionScope),
-    ],
+  const { data, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["clinic", "dashboard", ...sessionQueryKeyPart(sessionScope)],
     queryFn: () => fetchClinicDashboardQuery(accessToken),
     staleTime: STALE_DASHBOARD_MS,
     enabled: Boolean(accessToken),

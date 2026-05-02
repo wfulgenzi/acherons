@@ -1,6 +1,5 @@
 import { APP_BASE } from "@/shared/config";
 
-
 /** VAPID `applicationServerKey` decoding for `PushManager#subscribe`. */
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);

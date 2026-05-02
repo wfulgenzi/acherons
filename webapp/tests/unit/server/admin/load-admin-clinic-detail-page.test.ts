@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/server/admin/queries/admin-org-queries", () => ({
+vi.mock("@/server/admin/orgs/admin-org-queries", () => ({
   loadAdminOrgDetailBundle: vi.fn(),
 }));
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/server/admin/queries/admin-users-queries", () => ({
+vi.mock("@/server/admin/users/admin-users-queries", () => ({
   loadAdminUsersListPage: vi.fn(),
 }));
 
